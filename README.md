@@ -47,10 +47,11 @@ Acesse `http://localhost:3000` e entre com o e-mail/senha definidos em `.env`.
    nomes de `.env.example` (`DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL` com
    a URL pública do deploy, `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`,
    `CRON_SECRET`).
-4. Rode as migrações contra o banco de produção uma vez (localmente, com
-   `DATABASE_URL` apontando pra produção, ou via `vercel env pull` +
-   `npx prisma migrate deploy`) e depois `npm run db:seed` para criar seu
-   usuário e as listas padrão.
+4. Não precisa rodar migração/seed manualmente: o `package.json` define um
+   script `vercel-build` (`prisma migrate deploy && prisma db seed && next
+   build`) que a Vercel detecta e executa automaticamente a cada deploy — ele
+   aplica as migrações pendentes e (re)cria seu usuário/listas padrão via
+   upsert, então é seguro rodar em todo deploy.
 5. O arquivo `vercel.json` já configura um Vercel Cron diário
    (`/api/cron/check-prazos`, 11h UTC ≈ 8h em Maceió) que gera os lembretes
    automáticos de prazo/inatividade e dispara o e-mail de resumo. A Vercel
