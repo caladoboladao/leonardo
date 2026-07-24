@@ -1,0 +1,183 @@
+// Schema da Plataforma de Acompanhamento de Protocolos Societários
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo pronto para multiusuário futuro: tudo pendura em um User,
+// mas hoje só existe um usuário (uso individual).
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  protocolos Protocolo[]
+  orgaos     Orgao[]
+  tiposAto   TipoAto[]
+  status     Status[]
+  settings   Settings?
+}
+
+// Configurações editáveis pelo usuário (nada fixo no código)
+model Settings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // dias de antecedência para gerar lembrete automático de vencimento de prazo
+  diasAlertaPrazo Int @default(5)
+  // dias sem mudança de status para gerar lembrete automático de inatividade
+  diasParado      Int @default(7)
+
+  updatedAt DateTime @updatedAt
+}
+
+// Lista de órgãos editável pelo usuário (JUCEAL, JUCEC, Prefeituras, SEFAZ, etc.)
+model Orgao {
+  id     String @id @default(cuid())
+  nome   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  protocolos Protocolo[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, nome])
+}
+
+// Lista de tipos de ato editável pelo usuário
+model TipoAto {
+  id     String @id @default(cuid())
+  nome   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  protocolos Protocolo[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, nome])
+}
+
+// Lista de status editável pelo usuário, com cor e ordem de exibição
+model Status {
+  id     String @id @default(cuid())
+  nome   String
+  cor    String @default("#6b7280")
+  ordem  Int    @default(0)
+  // status que representa "concluído" para fins de arquivo/histórico
+  isConcluido Boolean @default(false)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  protocolos            Protocolo[]
+  historicoStatusNovo   StatusHistorico[] @relation("statusNovo")
+  historicoStatusAntigo StatusHistorico[] @relation("statusAnterior")
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, nome])
+}
+
+model Protocolo {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  empresa            String
+  empresasVinculadas EmpresaVinculada[]
+
+  numeroProtocolo String?
+
+  orgaoId String?
+  orgao   Orgao?  @relation(fields: [orgaoId], references: [id])
+
+  tipoAtoId String?
+  tipoAto   TipoAto? @relation(fields: [tipoAtoId], references: [id])
+
+  statusId String
+  status   Status  @relation(fields: [statusId], references: [id])
+
+  dataInicio      DateTime
+  prazoDias       Int?
+  dataVencimento  DateTime?
+
+  clienteResponsavel String?
+  observacoes        String?
+
+  ultimaMudancaStatusEm DateTime @default(now())
+
+  // marca que já foi gerado lembrete automático para o ciclo atual de prazo/inatividade,
+  // evitando duplicar lembretes a cada execução do job de automação
+  alertaPrazoGeradoEm  DateTime?
+  alertaParadoGeradoEm DateTime?
+
+  historicoStatus StatusHistorico[]
+  lembretes       Lembrete[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, statusId])
+  @@index([userId, dataVencimento])
+}
+
+model EmpresaVinculada {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+  nome        String
+}
+
+model StatusHistorico {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  statusAnteriorId String?
+  statusAnterior   Status? @relation("statusAnterior", fields: [statusAnteriorId], references: [id])
+
+  statusNovoId String
+  statusNovo   Status @relation("statusNovo", fields: [statusNovoId], references: [id])
+
+  changedAt DateTime @default(now())
+}
+
+enum OrigemLembrete {
+  MANUAL
+  PRAZO_EXIGENCIA
+  PRAZO_ORGAO
+  PARADO_SEM_MOVIMENTACAO
+}
+
+enum StatusLembrete {
+  PENDENTE
+  RESOLVIDO
+}
+
+model Lembrete {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  dataHora DateTime @default(now())
+  nota     String
+
+  origem OrigemLembrete @default(MANUAL)
+  status StatusLembrete @default(PENDENTE)
+
+  emailEnviadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protocoloId, status])
+}
