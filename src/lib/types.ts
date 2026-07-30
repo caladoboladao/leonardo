@@ -80,6 +80,19 @@ export type Settings = {
   updatedAt: string;
 };
 
+export type DashboardStats = {
+  geradoEm: string;
+  totalAtivos: number;
+  vencendoEstaSemana: number;
+  vencidos: number;
+  paradosSemMovimentacao: number;
+  abertosNoMes: number;
+  concluidosNoMes: number;
+  tempoMedioConclusaoDias: number | null;
+  porStatus: { statusId: string; nome: string; cor: string; total: number }[];
+  porOrgao: { nome: string; total: number }[];
+};
+
 export const ORIGEM_LABEL: Record<OrigemLembrete, string> = {
   MANUAL: "Manual",
   PRAZO_EXIGENCIA: "Prazo de exigência",

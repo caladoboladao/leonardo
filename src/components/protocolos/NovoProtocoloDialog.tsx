@@ -209,7 +209,7 @@ export function NovoProtocoloDialog({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Criar protocolo"}
           </button>

@@ -15,10 +15,11 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <span className="h-2.5 w-2.5 rounded-full bg-accent" />
             Protocolos Societários
           </span>
           <nav className="flex gap-1">
@@ -29,9 +30,9 @@ export function NavBar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
-                      ? "bg-slate-900 text-white"
+                      ? "bg-accent text-white"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >

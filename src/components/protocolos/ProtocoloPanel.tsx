@@ -101,7 +101,7 @@ export function ProtocoloPanel({
 
   return (
     <div className="fixed inset-0 z-30 flex justify-end bg-black/20">
-      <div className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-xl">
+      <div className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Detalhes do protocolo</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
@@ -240,7 +240,7 @@ export function ProtocoloPanel({
                 <button
                   type="submit"
                   disabled={enviandoNota}
-                  className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
                 >
                   Adicionar
                 </button>

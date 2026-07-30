@@ -14,6 +14,7 @@ import { StatusPill } from "./StatusPill";
 import { InlineText, InlineNumber, InlineDate, InlineSelect } from "./InlineEditors";
 import { NovoProtocoloDialog } from "./NovoProtocoloDialog";
 import { ProtocoloPanel } from "./ProtocoloPanel";
+import { DashboardResumo } from "@/components/dashboard/DashboardResumo";
 
 type SortField =
   | "empresa"
@@ -142,12 +143,13 @@ export function ProtocolosView({
 
   return (
     <div>
+      {!arquivados && <DashboardResumo />}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por empresa, protocolo ou responsável..."
-          className="w-72 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-slate-500"
+          className="w-72 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-accent"
         />
         <select
           value={statusFiltro}
@@ -178,7 +180,7 @@ export function ProtocolosView({
           <button
             onClick={() => setNovoAberto(true)}
             disabled={loading || statusOptions.length === 0}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
           >
             + Novo protocolo
           </button>
@@ -191,7 +193,7 @@ export function ProtocolosView({
       ) : filtrados.length === 0 ? (
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full min-w-[1100px] border-collapse text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
