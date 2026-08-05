@@ -1,18 +1,27 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { OrgaoOption, StatusOption } from "@/lib/types";
+import { OrgaoOption, StatusOption, TipoAtoOption } from "@/lib/types";
 
-type Resultado = { criados: number; duplicados: number; invalidos: number };
+type Resultado = {
+  criados: number;
+  duplicados: number;
+  invalidos: number;
+  orgaosCriados: number;
+  tiposCriados: number;
+  lembretesCriados: number;
+};
 
 export function ImportarPlanilhaDialog({
   statusOptions,
   orgaoOptions,
+  tipoAtoOptions,
   onClose,
   onImported,
 }: {
   statusOptions: StatusOption[];
   orgaoOptions: OrgaoOption[];
+  tipoAtoOptions: TipoAtoOption[];
   onClose: () => void;
   onImported: () => void;
 }) {
@@ -24,6 +33,7 @@ export function ImportarPlanilhaDialog({
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [statusId, setStatusId] = useState(statusInicial);
   const [orgaoId, setOrgaoId] = useState("");
+  const [tipoAtoId, setTipoAtoId] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);
@@ -38,6 +48,7 @@ export function ImportarPlanilhaDialog({
       form.append("file", arquivo);
       form.append("statusId", statusId);
       if (orgaoId) form.append("orgaoId", orgaoId);
+      if (tipoAtoId) form.append("tipoAtoId", tipoAtoId);
 
       const res = await fetch("/api/protocolos/import", { method: "POST", body: form });
       const body = await res.json();
@@ -60,9 +71,11 @@ export function ImportarPlanilhaDialog({
       >
         <h2 className="mb-1 text-lg font-semibold text-slate-900">Importar planilha</h2>
         <p className="mb-4 text-sm text-slate-500">
-          Arquivo .xlsx com colunas de cabeçalho <strong>Protocolo</strong>,{" "}
-          <strong>Empresa</strong> e (opcional) <strong>Data</strong>. Protocolos já existentes
-          são ignorados automaticamente.
+          Arquivo .xlsx com colunas de cabeçalho <strong>Protocolo</strong> e{" "}
+          <strong>Empresa</strong>. Se a planilha também tiver colunas de{" "}
+          <strong>CNPJ</strong>, <strong>Órgão</strong>, <strong>Tipo</strong>,{" "}
+          <strong>Data</strong> ou <strong>Lembrete</strong>, elas são usadas automaticamente
+          (órgãos e tipos novos são criados sozinhos). Protocolos já existentes são ignorados.
         </p>
 
         <label className="mb-1 block text-sm font-medium text-slate-700">Arquivo</label>
@@ -93,12 +106,12 @@ export function ImportarPlanilhaDialog({
         </select>
 
         <label className="mb-1 block text-sm font-medium text-slate-700">
-          Órgão a aplicar nos importados (opcional)
+          Órgão padrão (usado se a planilha não tiver essa coluna)
         </label>
         <select
           value={orgaoId}
           onChange={(e) => setOrgaoId(e.target.value)}
-          className="mb-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+          className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
         >
           <option value="">—</option>
           {orgaoOptions.map((o) => (
@@ -108,12 +121,42 @@ export function ImportarPlanilhaDialog({
           ))}
         </select>
 
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+          Tipo de ato padrão (usado se a planilha não tiver essa coluna)
+        </label>
+        <select
+          value={tipoAtoId}
+          onChange={(e) => setTipoAtoId(e.target.value)}
+          className="mb-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+        >
+          <option value="">—</option>
+          {tipoAtoOptions.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nome}
+            </option>
+          ))}
+        </select>
+
         {erro && <p className="mb-3 text-sm text-red-600">{erro}</p>}
         {resultado && (
-          <p className="mb-3 text-sm text-slate-700">
-            {resultado.criados} importado(s), {resultado.duplicados} já existente(s) ignorado(s)
-            {resultado.invalidos > 0 ? `, ${resultado.invalidos} linha(s) inválida(s)` : ""}.
-          </p>
+          <div className="mb-3 rounded-md bg-slate-50 p-3 text-sm text-slate-700">
+            <p>
+              {resultado.criados} importado(s), {resultado.duplicados} já existente(s)
+              ignorado(s)
+              {resultado.invalidos > 0 ? `, ${resultado.invalidos} linha(s) inválida(s)` : ""}.
+            </p>
+            {(resultado.orgaosCriados > 0 ||
+              resultado.tiposCriados > 0 ||
+              resultado.lembretesCriados > 0) && (
+              <p className="mt-1 text-xs text-slate-500">
+                {resultado.orgaosCriados > 0 && `${resultado.orgaosCriados} órgão(s) novo(s). `}
+                {resultado.tiposCriados > 0 &&
+                  `${resultado.tiposCriados} tipo(s) de ato novo(s). `}
+                {resultado.lembretesCriados > 0 &&
+                  `${resultado.lembretesCriados} lembrete(s) criado(s) a partir da planilha.`}
+              </p>
+            )}
+          </div>
         )}
 
         <div className="flex justify-end gap-2">

@@ -24,6 +24,7 @@ export function NovoProtocoloDialog({
   const [empresasVinculadas, setEmpresasVinculadas] = useState("");
   const [protocolosVinculados, setProtocolosVinculados] = useState("");
   const [numeroProtocolo, setNumeroProtocolo] = useState("");
+  const [cnpj, setCnpj] = useState("");
   const [orgaoId, setOrgaoId] = useState("");
   const [tipoAtoId, setTipoAtoId] = useState("");
   const [statusId, setStatusId] = useState(statusInicial);
@@ -50,6 +51,7 @@ export function NovoProtocoloDialog({
           .map((s) => s.trim())
           .filter(Boolean),
         numeroProtocolo: numeroProtocolo || undefined,
+        cnpj: cnpj || undefined,
         orgaoId: orgaoId || null,
         tipoAtoId: tipoAtoId || null,
         statusId,
@@ -113,6 +115,17 @@ export function NovoProtocoloDialog({
             />
           </div>
           <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ</label>
+            <input
+              value={cnpj}
+              onChange={(e) => setCnpj(e.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
             <select
               value={statusId}
@@ -129,9 +142,6 @@ export function NovoProtocoloDialog({
                 ))}
             </select>
           </div>
-        </div>
-
-        <div className="mb-3 grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Órgão</label>
             <select

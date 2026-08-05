@@ -42,6 +42,7 @@ export const GET = apiRoute(async (req) => {
             OR: [
               { empresa: { contains: q, mode: "insensitive" } },
               { numeroProtocolo: { contains: q, mode: "insensitive" } },
+              { cnpj: { contains: q, mode: "insensitive" } },
               { clienteResponsavel: { contains: q, mode: "insensitive" } },
             ],
           }
@@ -66,6 +67,7 @@ const createSchema = z.object({
   empresasVinculadas: z.array(z.string().min(1)).optional().default([]),
   protocolosVinculados: z.array(z.string().min(1)).optional().default([]),
   numeroProtocolo: z.string().optional(),
+  cnpj: z.string().optional(),
   orgaoId: z.string().nullable().optional(),
   tipoAtoId: z.string().nullable().optional(),
   statusId: z.string().min(1),
@@ -93,6 +95,7 @@ export const POST = apiRoute(async (req) => {
       userId,
       empresa: body.empresa,
       numeroProtocolo: body.numeroProtocolo,
+      cnpj: body.cnpj,
       orgaoId: body.orgaoId ?? null,
       tipoAtoId: body.tipoAtoId ?? null,
       statusId: body.statusId,

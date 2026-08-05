@@ -97,6 +97,7 @@ model Protocolo {
   protocolosVinculados ProtocoloVinculado[]
 
   numeroProtocolo String?
+  cnpj            String?
 
   orgaoId String?
   orgao   Orgao?  @relation(fields: [orgaoId], references: [id])

@@ -181,6 +181,13 @@ export function ProtocoloPanel({
                   />
                 </div>
                 <div>
+                  <span className="text-xs font-medium uppercase text-slate-500">CNPJ</span>
+                  <InlineText
+                    value={detalhe.cnpj ?? ""}
+                    onSave={(v) => atualizar({ cnpj: v })}
+                  />
+                </div>
+                <div>
                   <span className="text-xs font-medium uppercase text-slate-500">
                     Responsável
                   </span>

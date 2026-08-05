@@ -38,6 +38,7 @@ const updateSchema = z.object({
   empresasVinculadas: z.array(z.string().min(1)).optional(),
   protocolosVinculados: z.array(z.string().min(1)).optional(),
   numeroProtocolo: z.string().nullable().optional(),
+  cnpj: z.string().nullable().optional(),
   orgaoId: z.string().nullable().optional(),
   tipoAtoId: z.string().nullable().optional(),
   statusId: z.string().optional(),
@@ -68,6 +69,7 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
 
   if (body.empresa !== undefined) data.empresa = body.empresa;
   if (body.numeroProtocolo !== undefined) data.numeroProtocolo = body.numeroProtocolo;
+  if (body.cnpj !== undefined) data.cnpj = body.cnpj;
   if (body.orgaoId !== undefined) data.orgaoId = body.orgaoId;
   if (body.tipoAtoId !== undefined) data.tipoAtoId = body.tipoAtoId;
   if (body.clienteResponsavel !== undefined) data.clienteResponsavel = body.clienteResponsavel;

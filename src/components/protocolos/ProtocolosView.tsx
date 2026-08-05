@@ -522,6 +522,7 @@ export function ProtocolosView({
         <ImportarPlanilhaDialog
           statusOptions={statusOptions}
           orgaoOptions={orgaoOptions}
+          tipoAtoOptions={tipoAtoOptions}
           onClose={() => setImportarAberto(false)}
           onImported={carregar}
         />

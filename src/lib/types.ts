@@ -16,6 +16,7 @@ export type ProtocoloListItem = {
   id: string;
   empresa: string;
   numeroProtocolo: string | null;
+  cnpj: string | null;
   orgaoId: string | null;
   orgao: OrgaoOption | null;
   tipoAtoId: string | null;
