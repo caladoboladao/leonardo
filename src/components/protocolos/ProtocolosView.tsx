@@ -13,8 +13,8 @@ import { situacaoVencimento } from "@/lib/vencimento";
 import { StatusPill } from "./StatusPill";
 import { InlineText, InlineNumber, InlineDate, InlineSelect } from "./InlineEditors";
 import { NovoProtocoloDialog } from "./NovoProtocoloDialog";
+import { ImportarPlanilhaDialog } from "./ImportarPlanilhaDialog";
 import { ProtocoloPanel } from "./ProtocoloPanel";
-import { DashboardResumo } from "@/components/dashboard/DashboardResumo";
 
 type SortField =
   | "empresa"
@@ -48,6 +48,7 @@ export function ProtocolosView({
     initialSelecionadoId ?? null
   );
   const [novoAberto, setNovoAberto] = useState(false);
+  const [importarAberto, setImportarAberto] = useState(false);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -143,7 +144,6 @@ export function ProtocolosView({
 
   return (
     <div>
-      {!arquivados && <DashboardResumo />}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <input
           value={q}
@@ -177,13 +177,22 @@ export function ProtocolosView({
         </select>
         <div className="flex-1" />
         {!arquivados && (
-          <button
-            onClick={() => setNovoAberto(true)}
-            disabled={loading || statusOptions.length === 0}
-            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
-          >
-            + Novo protocolo
-          </button>
+          <>
+            <button
+              onClick={() => setImportarAberto(true)}
+              disabled={loading || statusOptions.length === 0}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent disabled:opacity-50"
+            >
+              Importar planilha
+            </button>
+            <button
+              onClick={() => setNovoAberto(true)}
+              disabled={loading || statusOptions.length === 0}
+              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+            >
+              + Novo protocolo
+            </button>
+          </>
         )}
       </div>
 
@@ -357,6 +366,15 @@ export function ProtocolosView({
             setProtocolos((prev) => [p, ...prev]);
             setNovoAberto(false);
           }}
+        />
+      )}
+
+      {importarAberto && (
+        <ImportarPlanilhaDialog
+          statusOptions={statusOptions}
+          orgaoOptions={orgaoOptions}
+          onClose={() => setImportarAberto(false)}
+          onImported={carregar}
         />
       )}
 

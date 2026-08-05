@@ -94,6 +94,7 @@ model Protocolo {
 
   empresa            String
   empresasVinculadas EmpresaVinculada[]
+  protocolosVinculados ProtocoloVinculado[]
 
   numeroProtocolo String?
 
@@ -135,6 +136,16 @@ model EmpresaVinculada {
   protocoloId String
   protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
   nome        String
+}
+
+// Números de protocolo relacionados ao protocolo principal (ex.: protocolos
+// conexos abertos no mesmo assunto). Não aparecem na listagem principal,
+// apenas no painel de detalhes/criação.
+model ProtocoloVinculado {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+  numero      String
 }
 
 model StatusHistorico {

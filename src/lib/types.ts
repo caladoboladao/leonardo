@@ -10,6 +10,7 @@ export type OrgaoOption = { id: string; nome: string };
 export type TipoAtoOption = { id: string; nome: string };
 
 export type EmpresaVinculada = { id: string; nome: string };
+export type ProtocoloVinculado = { id: string; numero: string };
 
 export type ProtocoloListItem = {
   id: string;
@@ -27,6 +28,7 @@ export type ProtocoloListItem = {
   clienteResponsavel: string | null;
   observacoes: string | null;
   empresasVinculadas: EmpresaVinculada[];
+  protocolosVinculados: ProtocoloVinculado[];
   _count: { lembretes: number };
   createdAt: string;
   updatedAt: string;

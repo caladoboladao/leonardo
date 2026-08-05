@@ -133,6 +133,17 @@ export function ProtocoloPanel({
                 </div>
               )}
 
+              {detalhe.protocolosVinculados.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium uppercase text-slate-500">
+                    Protocolos vinculados
+                  </span>
+                  <p className="text-sm text-slate-700">
+                    {detalhe.protocolosVinculados.map((p) => p.numero).join(", ")}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <span className="text-xs font-medium uppercase text-slate-500">Status</span>
                 <div className="mt-1">

@@ -22,6 +22,7 @@ export function NovoProtocoloDialog({
 
   const [empresa, setEmpresa] = useState("");
   const [empresasVinculadas, setEmpresasVinculadas] = useState("");
+  const [protocolosVinculados, setProtocolosVinculados] = useState("");
   const [numeroProtocolo, setNumeroProtocolo] = useState("");
   const [orgaoId, setOrgaoId] = useState("");
   const [tipoAtoId, setTipoAtoId] = useState("");
@@ -41,6 +42,10 @@ export function NovoProtocoloDialog({
       const protocolo = await api.post<ProtocoloListItem>("/api/protocolos", {
         empresa,
         empresasVinculadas: empresasVinculadas
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        protocolosVinculados: protocolosVinculados
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
@@ -83,6 +88,16 @@ export function NovoProtocoloDialog({
         <input
           value={empresasVinculadas}
           onChange={(e) => setEmpresasVinculadas(e.target.value)}
+          className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
+        />
+
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+          Protocolos vinculados (números separados por vírgula)
+        </label>
+        <input
+          value={protocolosVinculados}
+          onChange={(e) => setProtocolosVinculados(e.target.value)}
+          placeholder="Não aparece na planilha principal, só nos detalhes deste protocolo"
           className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
         />
 

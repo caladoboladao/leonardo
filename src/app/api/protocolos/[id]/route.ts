@@ -19,6 +19,7 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
       tipoAto: true,
       status: true,
       empresasVinculadas: true,
+      protocolosVinculados: true,
       lembretes: { orderBy: { dataHora: "desc" } },
       historicoStatus: {
         orderBy: { changedAt: "desc" },
@@ -35,6 +36,7 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
 const updateSchema = z.object({
   empresa: z.string().min(1).optional(),
   empresasVinculadas: z.array(z.string().min(1)).optional(),
+  protocolosVinculados: z.array(z.string().min(1)).optional(),
   numeroProtocolo: z.string().nullable().optional(),
   orgaoId: z.string().nullable().optional(),
   tipoAtoId: z.string().nullable().optional(),
@@ -113,6 +115,15 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
       }
     }
 
+    if (body.protocolosVinculados !== undefined) {
+      await tx.protocoloVinculado.deleteMany({ where: { protocoloId: id } });
+      if (body.protocolosVinculados.length > 0) {
+        await tx.protocoloVinculado.createMany({
+          data: body.protocolosVinculados.map((numero) => ({ protocoloId: id, numero })),
+        });
+      }
+    }
+
     return tx.protocolo.update({
       where: { id },
       data,
@@ -121,6 +132,7 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
         tipoAto: true,
         status: true,
         empresasVinculadas: true,
+        protocolosVinculados: true,
         _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
       },
     });

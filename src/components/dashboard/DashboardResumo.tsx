@@ -61,13 +61,23 @@ export function DashboardResumo() {
   return (
     <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Resumo</h2>
-        <a
-          href="/api/dashboard/export"
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-accent hover:text-accent"
-        >
-          Baixar Excel
-        </a>
+        <p className="text-xs text-slate-500">
+          Atualizado em {new Date(stats.geradoEm).toLocaleString("pt-BR")}
+        </p>
+        <div className="flex gap-2">
+          <a
+            href="/api/dashboard/export"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-accent hover:text-accent"
+          >
+            Baixar Excel
+          </a>
+          <a
+            href="/api/dashboard/export/pdf"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-accent hover:text-accent"
+          >
+            Baixar PDF
+          </a>
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">

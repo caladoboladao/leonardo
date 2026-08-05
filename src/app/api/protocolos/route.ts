@@ -52,6 +52,7 @@ export const GET = apiRoute(async (req) => {
       tipoAto: true,
       status: true,
       empresasVinculadas: true,
+      protocolosVinculados: true,
       _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
     },
     orderBy,
@@ -63,6 +64,7 @@ export const GET = apiRoute(async (req) => {
 const createSchema = z.object({
   empresa: z.string().min(1),
   empresasVinculadas: z.array(z.string().min(1)).optional().default([]),
+  protocolosVinculados: z.array(z.string().min(1)).optional().default([]),
   numeroProtocolo: z.string().optional(),
   orgaoId: z.string().nullable().optional(),
   tipoAtoId: z.string().nullable().optional(),
@@ -102,6 +104,9 @@ export const POST = apiRoute(async (req) => {
       empresasVinculadas: {
         create: body.empresasVinculadas.map((nome) => ({ nome })),
       },
+      protocolosVinculados: {
+        create: body.protocolosVinculados.map((numero) => ({ numero })),
+      },
       historicoStatus: {
         create: { statusNovoId: body.statusId },
       },
@@ -111,6 +116,7 @@ export const POST = apiRoute(async (req) => {
       tipoAto: true,
       status: true,
       empresasVinculadas: true,
+      protocolosVinculados: true,
       _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
     },
   });
