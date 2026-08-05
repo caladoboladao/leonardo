@@ -29,7 +29,7 @@ export async function computeDashboardStats(
     }),
     prisma.protocolo.findMany({
       where: { userId, status: { isConcluido: true } },
-      select: { dataInicio: true, ultimaMudancaStatusEm: true },
+      select: { dataInicio: true, ultimaMudancaStatusEm: true, dataConclusao: true },
     }),
     prisma.protocolo.count({
       where: {
@@ -78,12 +78,11 @@ export async function computeDashboardStats(
   let somaDias = 0;
   let contamTempo = 0;
   for (const p of concluidos) {
-    const dentro = periodo
-      ? p.ultimaMudancaStatusEm >= periodo.from && p.ultimaMudancaStatusEm < periodo.to
-      : true;
+    const dataConclusao = p.dataConclusao ?? p.ultimaMudancaStatusEm;
+    const dentro = periodo ? dataConclusao >= periodo.from && dataConclusao < periodo.to : true;
     if (dentro) {
       concluidosNoPeriodo++;
-      somaDias += diasEntre(p.dataInicio, p.ultimaMudancaStatusEm);
+      somaDias += diasEntre(p.dataInicio, dataConclusao);
       contamTempo++;
     }
   }

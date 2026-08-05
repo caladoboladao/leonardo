@@ -111,6 +111,9 @@ model Protocolo {
   dataInicio      DateTime
   prazoDias       Int?
   dataVencimento  DateTime?
+  // preenchida automaticamente quando o status muda pra um marcado como
+  // "conclui protocolo"; limpa se o protocolo for reaberto
+  dataConclusao   DateTime?
 
   clienteResponsavel String?
   observacoes        String?

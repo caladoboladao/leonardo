@@ -53,16 +53,20 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const existing = await prisma.protocolo.findFirst({ where: { id, userId } });
+  const existing = await prisma.protocolo.findFirst({
+    where: { id, userId },
+    include: { status: true },
+  });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = updateSchema.parse(await req.json());
 
+  let novoStatus: { id: string; isConcluido: boolean } | null = null;
   if (body.statusId) {
-    const status = await prisma.status.findFirst({
+    novoStatus = await prisma.status.findFirst({
       where: { id: body.statusId, userId },
     });
-    if (!status) return NextResponse.json({ error: "status inválido" }, { status: 400 });
+    if (!novoStatus) return NextResponse.json({ error: "status inválido" }, { status: 400 });
   }
 
   const data: Record<string, unknown> = {};
@@ -80,6 +84,12 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
     data.statusId = body.statusId;
     data.ultimaMudancaStatusEm = new Date();
     data.alertaParadoGeradoEm = null;
+
+    if (!existing.status.isConcluido && novoStatus!.isConcluido) {
+      data.dataConclusao = new Date();
+    } else if (existing.status.isConcluido && !novoStatus!.isConcluido) {
+      data.dataConclusao = null;
+    }
   }
 
   const prazoOuInicioMudou =

@@ -204,6 +204,7 @@ export const POST = apiRoute(async (req) => {
         tipoAtoId,
         statusId,
         dataInicio,
+        dataConclusao: status.isConcluido ? dataInicio : null,
         historicoStatus: { create: { statusNovoId: statusId } },
       },
     });

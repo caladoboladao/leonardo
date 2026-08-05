@@ -26,6 +26,7 @@ export type ProtocoloListItem = {
   dataInicio: string;
   prazoDias: number | null;
   dataVencimento: string | null;
+  dataConclusao: string | null;
   clienteResponsavel: string | null;
   observacoes: string | null;
   empresasVinculadas: EmpresaVinculada[];

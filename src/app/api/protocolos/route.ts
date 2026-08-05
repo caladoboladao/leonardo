@@ -102,6 +102,7 @@ export const POST = apiRoute(async (req) => {
       dataInicio: body.dataInicio,
       prazoDias: body.prazoDias ?? null,
       dataVencimento,
+      dataConclusao: status.isConcluido ? new Date() : null,
       clienteResponsavel: body.clienteResponsavel,
       observacoes: body.observacoes,
       empresasVinculadas: {

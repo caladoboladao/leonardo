@@ -233,14 +233,28 @@ export function ProtocoloPanel({
                 </div>
               </div>
 
-              {detalhe.dataVencimento && (
-                <div>
-                  <span className="text-xs font-medium uppercase text-slate-500">
-                    Vencimento
-                  </span>
-                  <p className="text-sm font-medium text-slate-700">
-                    {new Date(detalhe.dataVencimento).toLocaleDateString("pt-BR")}
-                  </p>
+              {(detalhe.dataVencimento || detalhe.dataConclusao) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {detalhe.dataVencimento && (
+                    <div>
+                      <span className="text-xs font-medium uppercase text-slate-500">
+                        Vencimento
+                      </span>
+                      <p className="text-sm font-medium text-slate-700">
+                        {new Date(detalhe.dataVencimento).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  )}
+                  {detalhe.dataConclusao && (
+                    <div>
+                      <span className="text-xs font-medium uppercase text-slate-500">
+                        Data de conclusão
+                      </span>
+                      <p className="text-sm font-medium text-slate-700">
+                        {new Date(detalhe.dataConclusao).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
