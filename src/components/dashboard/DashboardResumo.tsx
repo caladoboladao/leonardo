@@ -93,8 +93,11 @@ export function DashboardResumo() {
               setMes(Number(e.target.value));
               setTipoPeriodo("mes");
             }}
-            disabled={tipoPeriodo === "tudo"}
-            className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-40"
+            className={`rounded-md border px-2 py-1 text-sm outline-none ${
+              tipoPeriodo === "tudo"
+                ? "border-slate-200 text-slate-400"
+                : "border-slate-300 text-slate-900"
+            }`}
           >
             {MESES.map((m, i) => (
               <option key={m} value={i + 1}>
@@ -108,8 +111,11 @@ export function DashboardResumo() {
               setAno(Number(e.target.value));
               setTipoPeriodo("mes");
             }}
-            disabled={tipoPeriodo === "tudo"}
-            className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-40"
+            className={`rounded-md border px-2 py-1 text-sm outline-none ${
+              tipoPeriodo === "tudo"
+                ? "border-slate-200 text-slate-400"
+                : "border-slate-300 text-slate-900"
+            }`}
           >
             {anos.map((a) => (
               <option key={a} value={a}>
@@ -120,13 +126,14 @@ export function DashboardResumo() {
           <button
             type="button"
             onClick={() => setTipoPeriodo((t) => (t === "tudo" ? "mes" : "tudo"))}
+            title={tipoPeriodo === "tudo" ? "Voltar a filtrar por mês" : "Ver todo o histórico"}
             className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
               tipoPeriodo === "tudo"
-                ? "border-accent bg-accent-soft text-accent"
+                ? "border-accent bg-accent text-white"
                 : "border-slate-300 text-slate-600 hover:border-accent hover:text-accent"
             }`}
           >
-            Todo o período
+            {tipoPeriodo === "tudo" ? "✕ Todo o período" : "Todo o período"}
           </button>
         </div>
         <div className="flex gap-2">

@@ -49,6 +49,8 @@ export function ProtocolosView({
   );
   const [novoAberto, setNovoAberto] = useState(false);
   const [importarAberto, setImportarAberto] = useState(false);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [aplicandoEmMassa, setAplicandoEmMassa] = useState(false);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -87,6 +89,53 @@ export function ProtocolosView({
       }
       return next;
     });
+  }
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function aplicarEmMassa(data: Record<string, unknown>) {
+    const ids = Array.from(selecionados);
+    if (ids.length === 0) return;
+    setAplicandoEmMassa(true);
+    try {
+      const atualizados = await Promise.all(
+        ids.map((id) => api.patch<ProtocoloListItem>(`/api/protocolos/${id}`, data))
+      );
+      setProtocolos((prev) => {
+        const map = new Map(atualizados.map((a) => [a.id, a]));
+        const next = prev.map((p) => map.get(p.id) ?? p);
+        return next.filter((p) => {
+          const atualizado = map.get(p.id);
+          if (!atualizado) return true;
+          return arquivados === atualizado.status.isConcluido;
+        });
+      });
+      setSelecionados(new Set());
+    } finally {
+      setAplicandoEmMassa(false);
+    }
+  }
+
+  async function excluirEmMassa() {
+    const ids = Array.from(selecionados);
+    if (ids.length === 0) return;
+    if (!confirm(`Excluir ${ids.length} protocolo(s) selecionado(s)? Essa ação não pode ser desfeita.`))
+      return;
+    setAplicandoEmMassa(true);
+    try {
+      await Promise.all(ids.map((id) => api.delete(`/api/protocolos/${id}`)));
+      setProtocolos((prev) => prev.filter((p) => !selecionados.has(p.id)));
+      setSelecionados(new Set());
+    } finally {
+      setAplicandoEmMassa(false);
+    }
   }
 
   const filtrados = useMemo(() => {
@@ -195,6 +244,93 @@ export function ProtocolosView({
         )}
       </div>
 
+      {selecionados.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-accent/40 bg-accent-soft px-3 py-2 text-sm">
+          <span className="font-medium text-accent">
+            {selecionados.size} selecionado(s)
+          </span>
+
+          <select
+            defaultValue=""
+            disabled={aplicandoEmMassa}
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = "";
+              if (v) aplicarEmMassa({ statusId: v });
+            }}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-50"
+          >
+            <option value="" disabled>
+              Mudar status para...
+            </option>
+            {statusOptions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nome}
+              </option>
+            ))}
+          </select>
+
+          <select
+            defaultValue=""
+            disabled={aplicandoEmMassa}
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = "";
+              aplicarEmMassa({ orgaoId: v === "__none__" ? null : v });
+            }}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-50"
+          >
+            <option value="" disabled>
+              Mudar órgão para...
+            </option>
+            <option value="__none__">—</option>
+            {orgaoOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.nome}
+              </option>
+            ))}
+          </select>
+
+          <select
+            defaultValue=""
+            disabled={aplicandoEmMassa}
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = "";
+              aplicarEmMassa({ tipoAtoId: v === "__none__" ? null : v });
+            }}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-50"
+          >
+            <option value="" disabled>
+              Mudar tipo de ato para...
+            </option>
+            <option value="__none__">—</option>
+            {tipoAtoOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={excluirEmMassa}
+            disabled={aplicandoEmMassa}
+            className="rounded-md border border-red-300 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Excluir selecionados
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelecionados(new Set())}
+            className="ml-auto text-xs text-slate-500 hover:text-slate-800"
+          >
+            Limpar seleção
+          </button>
+        </div>
+      )}
+
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
       {loading ? (
         <p className="text-sm text-slate-500">Carregando...</p>
@@ -202,8 +338,9 @@ export function ProtocolosView({
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[1330px] border-collapse text-sm [table-layout:fixed]">
+          <table className="w-full min-w-[1370px] border-collapse text-sm [table-layout:fixed]">
             <colgroup>
+              <col style={{ width: 36 }} />
               <col style={{ width: 230 }} />
               <col style={{ width: 150 }} />
               <col style={{ width: 170 }} />
@@ -216,6 +353,26 @@ export function ProtocolosView({
             </colgroup>
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
+                <th className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={filtrados.length > 0 && filtrados.every((p) => selecionados.has(p.id))}
+                    ref={(el) => {
+                      if (el)
+                        el.indeterminate =
+                          selecionados.size > 0 &&
+                          !filtrados.every((p) => selecionados.has(p.id));
+                    }}
+                    onChange={(e) => {
+                      setSelecionados((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) filtrados.forEach((p) => next.add(p.id));
+                        else filtrados.forEach((p) => next.delete(p.id));
+                        return next;
+                      });
+                    }}
+                  />
+                </th>
                 <th className="px-3 py-2 text-left">{headerButton("empresa", "Empresa")}</th>
                 <th className="px-3 py-2 text-left">
                   {headerButton("numeroProtocolo", "Nº Protocolo")}
@@ -261,6 +418,13 @@ export function ProtocolosView({
                           : ""
                     }`}
                   >
+                    <td className="px-3 py-1">
+                      <input
+                        type="checkbox"
+                        checked={selecionados.has(p.id)}
+                        onChange={() => toggleSelecionado(p.id)}
+                      />
+                    </td>
                     <td className="px-1 py-1">
                       <button
                         className="w-full truncate rounded px-1.5 py-1 text-left font-medium hover:bg-slate-100"
