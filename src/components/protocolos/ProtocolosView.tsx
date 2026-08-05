@@ -57,7 +57,7 @@ export function ProtocolosView({
     setError(null);
     try {
       const [protos, status, orgaos, tipos, cfg] = await Promise.all([
-        api.get<ProtocoloListItem[]>(`/api/protocolos?arquivados=${arquivados}`),
+        api.get<ProtocoloListItem[]>(`/api/protocolos?arquivados=all`),
         api.get<StatusOption[]>("/api/opcoes/status"),
         api.get<OrgaoOption[]>("/api/opcoes/orgaos"),
         api.get<TipoAtoOption[]>("/api/opcoes/tipos-ato"),
@@ -73,7 +73,7 @@ export function ProtocolosView({
     } finally {
       setLoading(false);
     }
-  }, [arquivados]);
+  }, []);
 
   useEffect(() => {
     carregar();
@@ -81,14 +81,7 @@ export function ProtocolosView({
 
   async function atualizarProtocolo(id: string, data: Record<string, unknown>) {
     const atualizado = await api.patch<ProtocoloListItem>(`/api/protocolos/${id}`, data);
-    setProtocolos((prev) => {
-      const next = prev.map((p) => (p.id === id ? atualizado : p));
-      // se o status/arquivamento mudou de forma que o item não pertence mais a esta visão, remove
-      if (arquivados !== atualizado.status.isConcluido) {
-        return next.filter((p) => p.id !== id);
-      }
-      return next;
-    });
+    setProtocolos((prev) => prev.map((p) => (p.id === id ? atualizado : p)));
   }
 
   function toggleSelecionado(id: string) {
@@ -110,12 +103,7 @@ export function ProtocolosView({
       );
       setProtocolos((prev) => {
         const map = new Map(atualizados.map((a) => [a.id, a]));
-        const next = prev.map((p) => map.get(p.id) ?? p);
-        return next.filter((p) => {
-          const atualizado = map.get(p.id);
-          if (!atualizado) return true;
-          return arquivados === atualizado.status.isConcluido;
-        });
+        return prev.map((p) => map.get(p.id) ?? p);
       });
       setSelecionados(new Set());
     } finally {
@@ -140,6 +128,16 @@ export function ProtocolosView({
 
   const filtrados = useMemo(() => {
     let lista = protocolos;
+
+    if (statusFiltro) {
+      // status escolhido explicitamente vale por si só — inclusive pra ver
+      // concluídos a partir da tela principal, mesmo ela normalmente
+      // escondendo-os.
+      lista = lista.filter((p) => p.statusId === statusFiltro);
+    } else {
+      lista = lista.filter((p) => p.status.isConcluido === arquivados);
+    }
+
     if (q.trim()) {
       const termo = q.trim().toLowerCase();
       lista = lista.filter(
@@ -149,7 +147,6 @@ export function ProtocolosView({
           p.clienteResponsavel?.toLowerCase().includes(termo)
       );
     }
-    if (statusFiltro) lista = lista.filter((p) => p.statusId === statusFiltro);
     if (orgaoFiltro) lista = lista.filter((p) => p.orgaoId === orgaoFiltro);
 
     const dir = sortDir === "asc" ? 1 : -1;
@@ -160,7 +157,7 @@ export function ProtocolosView({
       if (va > vb) return 1 * dir;
       return 0;
     });
-  }, [protocolos, q, statusFiltro, orgaoFiltro, sortBy, sortDir]);
+  }, [protocolos, q, statusFiltro, orgaoFiltro, sortBy, sortDir, arquivados]);
 
   function toggleSort(field: SortField) {
     if (sortBy === field) {
@@ -538,13 +535,9 @@ export function ProtocolosView({
           tipoAtoOptions={tipoAtoOptions}
           onClose={() => setSelecionadoId(null)}
           onChanged={(atualizado) => {
-            setProtocolos((prev) => {
-              const next = prev.map((p) => (p.id === atualizado.id ? atualizado : p));
-              if (arquivados !== atualizado.status.isConcluido) {
-                return next.filter((p) => p.id !== atualizado.id);
-              }
-              return next;
-            });
+            setProtocolos((prev) =>
+              prev.map((p) => (p.id === atualizado.id ? atualizado : p))
+            );
           }}
           onDeleted={(id) => {
             setProtocolos((prev) => prev.filter((p) => p.id !== id));
