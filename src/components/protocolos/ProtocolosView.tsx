@@ -130,14 +130,20 @@ export function ProtocolosView({
   }
 
   function headerButton(field: SortField, label: string) {
+    const ativo = sortBy === field;
     return (
       <button
         type="button"
         onClick={() => toggleSort(field)}
-        className="flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-800"
+        title="Ordenar"
+        className={`flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-wide hover:text-accent ${
+          ativo ? "text-accent" : "text-slate-500"
+        }`}
       >
         {label}
-        {sortBy === field && <span>{sortDir === "asc" ? "↑" : "↓"}</span>}
+        <span className={`text-[10px] leading-none ${ativo ? "" : "text-slate-300"}`}>
+          {ativo ? (sortDir === "asc" ? "▲" : "▼") : "▲▼"}
+        </span>
       </button>
     );
   }
@@ -203,7 +209,20 @@ export function ProtocolosView({
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[1100px] border-collapse text-sm">
+          <table className="w-full min-w-[1500px] border-collapse text-sm [table-layout:fixed]">
+            <colgroup>
+              <col style={{ width: 230 }} />
+              <col style={{ width: 150 }} />
+              <col style={{ width: 170 }} />
+              <col style={{ width: 170 }} />
+              <col style={{ width: 150 }} />
+              <col style={{ width: 110 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 110 }} />
+              <col style={{ width: 150 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 80 }} />
+            </colgroup>
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th className="px-3 py-2 text-left">{headerButton("empresa", "Empresa")}</th>

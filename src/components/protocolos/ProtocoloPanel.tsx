@@ -35,6 +35,8 @@ export function ProtocoloPanel({
   const [loading, setLoading] = useState(true);
   const [novaNota, setNovaNota] = useState("");
   const [enviandoNota, setEnviandoNota] = useState(false);
+  const [novoVinculado, setNovoVinculado] = useState("");
+  const [enviandoVinculado, setEnviandoVinculado] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -93,6 +95,30 @@ export function ProtocoloPanel({
     );
   }
 
+  async function adicionarVinculado(e: FormEvent) {
+    e.preventDefault();
+    if (!novoVinculado.trim() || !detalhe) return;
+    setEnviandoVinculado(true);
+    try {
+      const numeros = [
+        ...detalhe.protocolosVinculados.map((p) => p.numero),
+        novoVinculado.trim(),
+      ];
+      await atualizar({ protocolosVinculados: numeros });
+      setNovoVinculado("");
+    } finally {
+      setEnviandoVinculado(false);
+    }
+  }
+
+  async function removerVinculado(numero: string) {
+    if (!detalhe) return;
+    const numeros = detalhe.protocolosVinculados
+      .map((p) => p.numero)
+      .filter((n) => n !== numero);
+    await atualizar({ protocolosVinculados: numeros });
+  }
+
   async function excluirProtocolo() {
     if (!confirm("Excluir este protocolo e todo o seu histórico/lembretes?")) return;
     await api.delete(`/api/protocolos/${protocoloId}`);
@@ -129,17 +155,6 @@ export function ProtocoloPanel({
                   </span>
                   <p className="text-sm text-slate-700">
                     {detalhe.empresasVinculadas.map((e) => e.nome).join(", ")}
-                  </p>
-                </div>
-              )}
-
-              {detalhe.protocolosVinculados.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium uppercase text-slate-500">
-                    Protocolos vinculados
-                  </span>
-                  <p className="text-sm text-slate-700">
-                    {detalhe.protocolosVinculados.map((p) => p.numero).join(", ")}
                   </p>
                 </div>
               )}
@@ -237,6 +252,52 @@ export function ProtocoloPanel({
                   className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
                 />
               </div>
+            </section>
+
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">Protocolos vinculados</h3>
+              <p className="mb-2 text-xs text-slate-500">
+                Ex.: protocolos de filiais anexados a este protocolo matriz. Não aparecem na
+                planilha principal.
+              </p>
+              <form onSubmit={adicionarVinculado} className="mb-3 flex gap-2">
+                <input
+                  value={novoVinculado}
+                  onChange={(e) => setNovoVinculado(e.target.value)}
+                  placeholder="Nº do protocolo vinculado..."
+                  className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={enviandoVinculado}
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+                >
+                  Adicionar
+                </button>
+              </form>
+
+              {detalhe.protocolosVinculados.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum protocolo vinculado ainda.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {detalhe.protocolosVinculados.map((p) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700"
+                    >
+                      {p.numero}
+                      <button
+                        type="button"
+                        onClick={() => removerVinculado(p.numero)}
+                        className="text-slate-400 hover:text-red-600"
+                        title="Remover"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="mb-6">

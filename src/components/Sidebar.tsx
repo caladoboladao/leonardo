@@ -16,10 +16,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <aside className="group fixed inset-y-0 left-0 z-40 flex w-14 flex-col overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-200 ease-out hover:w-60 hover:shadow-xl">
       <div className="flex items-center gap-2 px-4 py-4">
         <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" />
-        <span className="text-sm font-semibold leading-tight text-slate-900">
+        <span className="whitespace-nowrap text-sm font-semibold leading-tight text-slate-900 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
           Protocolos Societários
         </span>
       </div>
@@ -33,12 +33,14 @@ export function Sidebar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
                 active ? "bg-accent text-white" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {link.label}
+              <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                {link.label}
+              </span>
             </Link>
           );
         })}
@@ -47,10 +49,12 @@ export function Sidebar() {
       <div className="border-t border-slate-200 px-2 py-3">
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap text-slate-500 hover:bg-slate-100 hover:text-slate-800"
         >
           <IconExit className="h-4 w-4 shrink-0" />
-          Sair
+          <span className="opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            Sair
+          </span>
         </button>
       </div>
     </aside>
