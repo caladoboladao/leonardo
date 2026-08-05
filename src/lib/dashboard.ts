@@ -1,21 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { diasEntre } from "@/lib/protocolos";
 
+export type Periodo = { from: Date; to: Date; label: string } | null;
+
 export type DashboardStats = {
   geradoEm: string;
+  periodoLabel: string;
   totalAtivos: number;
   vencendoEstaSemana: number;
   vencidos: number;
   paradosSemMovimentacao: number;
-  abertosNoMes: number;
-  concluidosNoMes: number;
+  abertosNoPeriodo: number;
+  concluidosNoPeriodo: number;
   tempoMedioConclusaoDias: number | null;
   porStatus: { statusId: string; nome: string; cor: string; total: number }[];
   porOrgao: { nome: string; total: number }[];
 };
 
-export async function computeDashboardStats(userId: string): Promise<DashboardStats> {
-  const [settings, ativos, concluidos] = await Promise.all([
+export async function computeDashboardStats(
+  userId: string,
+  periodo: Periodo
+): Promise<DashboardStats> {
+  const [settings, ativos, concluidos, abertosNoPeriodo] = await Promise.all([
     prisma.settings.findUnique({ where: { userId } }),
     prisma.protocolo.findMany({
       where: { userId, status: { isConcluido: false } },
@@ -25,16 +31,20 @@ export async function computeDashboardStats(userId: string): Promise<DashboardSt
       where: { userId, status: { isConcluido: true } },
       select: { dataInicio: true, ultimaMudancaStatusEm: true },
     }),
+    prisma.protocolo.count({
+      where: {
+        userId,
+        ...(periodo ? { createdAt: { gte: periodo.from, lt: periodo.to } } : {}),
+      },
+    }),
   ]);
 
   const diasParado = settings?.diasParado ?? 7;
   const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
   let vencendoEstaSemana = 0;
   let vencidos = 0;
   let paradosSemMovimentacao = 0;
-  let abertosNoMes = 0;
 
   const porStatusMap = new Map<
     string,
@@ -49,7 +59,6 @@ export async function computeDashboardStats(userId: string): Promise<DashboardSt
       else if (dias <= 7) vencendoEstaSemana++;
     }
     if (diasEntre(p.ultimaMudancaStatusEm, hoje) >= diasParado) paradosSemMovimentacao++;
-    if (p.createdAt >= inicioMes) abertosNoMes++;
 
     const atual = porStatusMap.get(p.statusId);
     if (atual) atual.total++;
@@ -65,27 +74,70 @@ export async function computeDashboardStats(userId: string): Promise<DashboardSt
     porOrgaoMap.set(orgaoNome, (porOrgaoMap.get(orgaoNome) ?? 0) + 1);
   }
 
-  let concluidosNoMes = 0;
+  let concluidosNoPeriodo = 0;
   let somaDias = 0;
+  let contamTempo = 0;
   for (const p of concluidos) {
-    if (p.ultimaMudancaStatusEm >= inicioMes) concluidosNoMes++;
-    somaDias += diasEntre(p.dataInicio, p.ultimaMudancaStatusEm);
+    const dentro = periodo
+      ? p.ultimaMudancaStatusEm >= periodo.from && p.ultimaMudancaStatusEm < periodo.to
+      : true;
+    if (dentro) {
+      concluidosNoPeriodo++;
+      somaDias += diasEntre(p.dataInicio, p.ultimaMudancaStatusEm);
+      contamTempo++;
+    }
   }
   const tempoMedioConclusaoDias =
-    concluidos.length > 0 ? Math.round((somaDias / concluidos.length) * 10) / 10 : null;
+    contamTempo > 0 ? Math.round((somaDias / contamTempo) * 10) / 10 : null;
 
   return {
     geradoEm: hoje.toISOString(),
+    periodoLabel: periodo?.label ?? "Todo o período",
     totalAtivos: ativos.length,
     vencendoEstaSemana,
     vencidos,
     paradosSemMovimentacao,
-    abertosNoMes,
-    concluidosNoMes,
+    abertosNoPeriodo,
+    concluidosNoPeriodo,
     tempoMedioConclusaoDias,
     porStatus: Array.from(porStatusMap.values()).sort((a, b) => b.total - a.total),
     porOrgao: Array.from(porOrgaoMap.entries())
       .map(([nome, total]) => ({ nome, total }))
       .sort((a, b) => b.total - a.total),
+  };
+}
+
+const MESES_PT = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+export function periodoFromParams(searchParams: URLSearchParams): Periodo {
+  if (searchParams.get("periodo") === "tudo") return null;
+
+  const hoje = new Date();
+  const anoParam = searchParams.get("ano");
+  const mesParam = searchParams.get("mes");
+  const ano = anoParam ? Number(anoParam) : hoje.getFullYear();
+  const mes = mesParam ? Number(mesParam) - 1 : hoje.getMonth();
+
+  if (Number.isNaN(ano) || Number.isNaN(mes) || mes < 0 || mes > 11) {
+    return null;
+  }
+
+  return {
+    from: new Date(ano, mes, 1),
+    to: new Date(ano, mes + 1, 1),
+    label: `${MESES_PT[mes]}/${ano}`,
   };
 }

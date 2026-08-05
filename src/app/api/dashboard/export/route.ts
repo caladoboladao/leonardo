@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { getUserId } from "@/lib/session";
-import { computeDashboardStats } from "@/lib/dashboard";
+import { computeDashboardStats, periodoFromParams } from "@/lib/dashboard";
 import { apiRoute } from "@/lib/api-route";
 
-export const GET = apiRoute(async () => {
+export const GET = apiRoute(async (req) => {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const stats = await computeDashboardStats(userId);
+  const { searchParams } = new URL(req.url);
+  const stats = await computeDashboardStats(userId, periodoFromParams(searchParams));
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Protocolos Societários";
@@ -20,12 +21,13 @@ export const GET = apiRoute(async () => {
     { header: "Valor", key: "valor", width: 16 },
   ];
   resumo.addRows([
+    { indicador: "Período", valor: stats.periodoLabel },
     { indicador: "Protocolos ativos", valor: stats.totalAtivos },
     { indicador: "Vencendo nos próximos 7 dias", valor: stats.vencendoEstaSemana },
     { indicador: "Vencidos", valor: stats.vencidos },
     { indicador: "Parados sem movimentação", valor: stats.paradosSemMovimentacao },
-    { indicador: "Abertos no mês", valor: stats.abertosNoMes },
-    { indicador: "Concluídos no mês", valor: stats.concluidosNoMes },
+    { indicador: "Abertos no período", valor: stats.abertosNoPeriodo },
+    { indicador: "Concluídos no período", valor: stats.concluidosNoPeriodo },
     {
       indicador: "Tempo médio de conclusão (dias)",
       valor: stats.tempoMedioConclusaoDias ?? "—",

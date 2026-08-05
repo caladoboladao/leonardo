@@ -89,13 +89,6 @@ export function ProtocolosView({
     });
   }
 
-  async function excluirProtocolo(id: string) {
-    if (!confirm("Excluir este protocolo e todo o seu histórico/lembretes?")) return;
-    await api.delete(`/api/protocolos/${id}`);
-    setProtocolos((prev) => prev.filter((p) => p.id !== id));
-    setSelecionadoId(null);
-  }
-
   const filtrados = useMemo(() => {
     let lista = protocolos;
     if (q.trim()) {
@@ -209,7 +202,7 @@ export function ProtocolosView({
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[1500px] border-collapse text-sm [table-layout:fixed]">
+          <table className="w-full min-w-[1330px] border-collapse text-sm [table-layout:fixed]">
             <colgroup>
               <col style={{ width: 230 }} />
               <col style={{ width: 150 }} />
@@ -220,8 +213,6 @@ export function ProtocolosView({
               <col style={{ width: 90 }} />
               <col style={{ width: 110 }} />
               <col style={{ width: 150 }} />
-              <col style={{ width: 90 }} />
-              <col style={{ width: 80 }} />
             </colgroup>
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
@@ -248,10 +239,6 @@ export function ProtocolosView({
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Responsável
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Lembretes
-                </th>
-                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
@@ -348,24 +335,6 @@ export function ProtocolosView({
                           atualizarProtocolo(p.id, { clienteResponsavel: v })
                         }
                       />
-                    </td>
-                    <td className="px-1 py-1 text-center">
-                      {p._count.lembretes > 0 && (
-                        <button
-                          onClick={() => setSelecionadoId(p.id)}
-                          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white"
-                        >
-                          {p._count.lembretes}
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-1 py-1 text-right">
-                      <button
-                        onClick={() => excluirProtocolo(p.id)}
-                        className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        Excluir
-                      </button>
                     </td>
                   </tr>
                 );

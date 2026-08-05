@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb, RGB } from "pdf-lib";
 import { getUserId } from "@/lib/session";
-import { computeDashboardStats } from "@/lib/dashboard";
+import { computeDashboardStats, periodoFromParams } from "@/lib/dashboard";
 import { apiRoute } from "@/lib/api-route";
 
 function hexToRgb(hex: string): RGB {
@@ -15,11 +15,12 @@ function hexToRgb(hex: string): RGB {
 const INK = rgb(0.04, 0.04, 0.04);
 const MUTED = rgb(0.35, 0.35, 0.33);
 
-export const GET = apiRoute(async () => {
+export const GET = apiRoute(async (req) => {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const stats = await computeDashboardStats(userId);
+  const { searchParams } = new URL(req.url);
+  const stats = await computeDashboardStats(userId, periodoFromParams(searchParams));
 
   const doc = await PDFDocument.create();
   let page = doc.addPage([595.28, 841.89]);
@@ -38,13 +39,10 @@ export const GET = apiRoute(async () => {
 
   page.drawText("Resumo — Protocolos Societários", { x: marginX, y, size: 18, font: fontBold, color: INK });
   y -= 20;
-  page.drawText(`Gerado em ${new Date(stats.geradoEm).toLocaleString("pt-BR")}`, {
-    x: marginX,
-    y,
-    size: 10,
-    font,
-    color: MUTED,
-  });
+  page.drawText(
+    `Período: ${stats.periodoLabel}  ·  Gerado em ${new Date(stats.geradoEm).toLocaleString("pt-BR")}`,
+    { x: marginX, y, size: 10, font, color: MUTED }
+  );
   y -= 34;
 
   const kpis: [string, string | number][] = [
@@ -52,8 +50,8 @@ export const GET = apiRoute(async () => {
     ["Vencendo nos próximos 7 dias", stats.vencendoEstaSemana],
     ["Vencidos", stats.vencidos],
     ["Parados sem movimentação", stats.paradosSemMovimentacao],
-    ["Abertos no mês", stats.abertosNoMes],
-    ["Concluídos no mês", stats.concluidosNoMes],
+    ["Abertos no período", stats.abertosNoPeriodo],
+    ["Concluídos no período", stats.concluidosNoPeriodo],
     ["Tempo médio de conclusão (dias)", stats.tempoMedioConclusaoDias ?? "—"],
   ];
   for (const [label, valor] of kpis) {

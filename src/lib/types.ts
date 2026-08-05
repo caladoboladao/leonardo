@@ -84,12 +84,13 @@ export type Settings = {
 
 export type DashboardStats = {
   geradoEm: string;
+  periodoLabel: string;
   totalAtivos: number;
   vencendoEstaSemana: number;
   vencidos: number;
   paradosSemMovimentacao: number;
-  abertosNoMes: number;
-  concluidosNoMes: number;
+  abertosNoPeriodo: number;
+  concluidosNoPeriodo: number;
   tempoMedioConclusaoDias: number | null;
   porStatus: { statusId: string; nome: string; cor: string; total: number }[];
   porOrgao: { nome: string; total: number }[];
