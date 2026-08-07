@@ -13,6 +13,7 @@ import {
 } from "@/lib/types";
 import { StatusPill } from "./StatusPill";
 import { InlineText, InlineNumber, InlineSelect } from "./InlineEditors";
+import { formatCnpj } from "@/lib/format";
 
 export function ProtocoloPanel({
   protocoloId,
@@ -184,7 +185,7 @@ export function ProtocoloPanel({
                   <span className="text-xs font-medium uppercase text-slate-500">CNPJ</span>
                   <InlineText
                     value={detalhe.cnpj ?? ""}
-                    onSave={(v) => atualizar({ cnpj: v })}
+                    onSave={(v) => atualizar({ cnpj: formatCnpj(v) })}
                   />
                 </div>
                 <div>

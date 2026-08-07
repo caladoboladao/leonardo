@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/session";
 import { computeDataVencimento } from "@/lib/protocolos";
+import { buildProtocolosWhere } from "@/lib/protocolos-query";
 import { apiRoute } from "@/lib/api-route";
 
 export const GET = apiRoute(async (req) => {
@@ -10,10 +11,6 @@ export const GET = apiRoute(async (req) => {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q");
-  const statusId = searchParams.get("statusId");
-  const orgaoId = searchParams.get("orgaoId");
-  const arquivados = searchParams.get("arquivados") ?? "false";
   const sortBy = searchParams.get("sortBy") ?? "createdAt";
   const sortDir = searchParams.get("sortDir") === "asc" ? "asc" : "desc";
 
@@ -28,26 +25,7 @@ export const GET = apiRoute(async (req) => {
   const orderBy = allowedSort.has(sortBy) ? { [sortBy]: sortDir } : { createdAt: "desc" as const };
 
   const protocolos = await prisma.protocolo.findMany({
-    where: {
-      userId,
-      ...(statusId ? { statusId } : {}),
-      ...(orgaoId ? { orgaoId } : {}),
-      ...(arquivados === "true"
-        ? { status: { isConcluido: true } }
-        : arquivados === "all"
-          ? {}
-          : { status: { isConcluido: false } }),
-      ...(q
-        ? {
-            OR: [
-              { empresa: { contains: q, mode: "insensitive" } },
-              { numeroProtocolo: { contains: q, mode: "insensitive" } },
-              { cnpj: { contains: q, mode: "insensitive" } },
-              { clienteResponsavel: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
+    where: buildProtocolosWhere(userId, searchParams),
     include: {
       orgao: true,
       tipoAto: true,

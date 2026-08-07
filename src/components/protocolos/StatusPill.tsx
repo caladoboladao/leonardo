@@ -13,6 +13,7 @@ export function StatusPill({
   onChange: (statusId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [abrirParaCima, setAbrirParaCima] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,18 +24,32 @@ export function StatusPill({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  function alternarAbertura() {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const alturaEstimada = Math.min(options.length, 8) * 34 + 12;
+      const espacoAbaixo = window.innerHeight - rect.bottom;
+      setAbrirParaCima(espacoAbaixo < alturaEstimada && rect.top > espacoAbaixo);
+    }
+    setOpen((v) => !v);
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={alternarAbertura}
         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
         style={{ backgroundColor: status.cor }}
       >
         {status.nome}
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-52 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+        <div
+          className={`absolute z-20 w-52 rounded-md border border-slate-200 bg-white py-1 shadow-lg ${
+            abrirParaCima ? "bottom-full mb-1" : "mt-1"
+          }`}
+        >
           {options
             .slice()
             .sort((a, b) => a.ordem - b.ordem)

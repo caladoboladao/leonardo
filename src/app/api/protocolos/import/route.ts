@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/session";
 import { apiRoute } from "@/lib/api-route";
+import { formatCnpj } from "@/lib/format";
 
 function normalizeHeader(v: unknown): string {
   return String(v ?? "")
@@ -183,7 +184,8 @@ export const POST = apiRoute(async (req) => {
       continue;
     }
 
-    const cnpj = colunas.cnpj !== -1 ? cellToText(row.getCell(colunas.cnpj).value) || null : null;
+    const cnpjBruto = colunas.cnpj !== -1 ? cellToText(row.getCell(colunas.cnpj).value) : "";
+    const cnpj = cnpjBruto ? formatCnpj(cnpjBruto) : null;
     const orgaoNome = colunas.orgao !== -1 ? cellToText(row.getCell(colunas.orgao).value) : "";
     const tipoNome = colunas.tipo !== -1 ? cellToText(row.getCell(colunas.tipo).value) : "";
     const lembreteNota =

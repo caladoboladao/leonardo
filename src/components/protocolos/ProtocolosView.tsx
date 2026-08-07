@@ -41,6 +41,10 @@ export function ProtocolosView({
   const [q, setQ] = useState("");
   const [statusFiltro, setStatusFiltro] = useState("");
   const [orgaoFiltro, setOrgaoFiltro] = useState("");
+  const [tipoAtoFiltro, setTipoAtoFiltro] = useState("");
+  const [campoData, setCampoData] = useState<"dataInicio" | "dataVencimento">("dataInicio");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -144,10 +148,23 @@ export function ProtocolosView({
         (p) =>
           p.empresa.toLowerCase().includes(termo) ||
           p.numeroProtocolo?.toLowerCase().includes(termo) ||
+          p.cnpj?.toLowerCase().includes(termo) ||
           p.clienteResponsavel?.toLowerCase().includes(termo)
       );
     }
     if (orgaoFiltro) lista = lista.filter((p) => p.orgaoId === orgaoFiltro);
+    if (tipoAtoFiltro) lista = lista.filter((p) => p.tipoAtoId === tipoAtoFiltro);
+
+    if (dataDe || dataAte) {
+      lista = lista.filter((p) => {
+        const valor = p[campoData];
+        if (!valor) return false;
+        const dia = valor.slice(0, 10);
+        if (dataDe && dia < dataDe) return false;
+        if (dataAte && dia > dataAte) return false;
+        return true;
+      });
+    }
 
     const dir = sortDir === "asc" ? 1 : -1;
     return [...lista].sort((a, b) => {
@@ -157,7 +174,50 @@ export function ProtocolosView({
       if (va > vb) return 1 * dir;
       return 0;
     });
-  }, [protocolos, q, statusFiltro, orgaoFiltro, sortBy, sortDir, arquivados]);
+  }, [
+    protocolos,
+    q,
+    statusFiltro,
+    orgaoFiltro,
+    tipoAtoFiltro,
+    campoData,
+    dataDe,
+    dataAte,
+    sortBy,
+    sortDir,
+    arquivados,
+  ]);
+
+  const totalNaVisao = useMemo(
+    () => protocolos.filter((p) => p.status.isConcluido === arquivados).length,
+    [protocolos, arquivados]
+  );
+
+  const filtrosAtivos = Boolean(
+    q.trim() || statusFiltro || orgaoFiltro || tipoAtoFiltro || dataDe || dataAte
+  );
+
+  const exportUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (statusFiltro) params.set("statusId", statusFiltro);
+    if (orgaoFiltro) params.set("orgaoId", orgaoFiltro);
+    if (tipoAtoFiltro) params.set("tipoAtoId", tipoAtoFiltro);
+    if (dataDe) params.set("dataDe", dataDe);
+    if (dataAte) params.set("dataAte", dataAte);
+    params.set("campoData", campoData);
+    params.set("arquivados", arquivados ? "true" : "false");
+    return `/api/protocolos/export?${params.toString()}`;
+  }, [q, statusFiltro, orgaoFiltro, tipoAtoFiltro, campoData, dataDe, dataAte, arquivados]);
+
+  function limparFiltros() {
+    setQ("");
+    setStatusFiltro("");
+    setOrgaoFiltro("");
+    setTipoAtoFiltro("");
+    setDataDe("");
+    setDataAte("");
+  }
 
   function toggleSort(field: SortField) {
     if (sortBy === field) {
@@ -220,7 +280,62 @@ export function ProtocolosView({
             </option>
           ))}
         </select>
+        <select
+          value={tipoAtoFiltro}
+          onChange={(e) => setTipoAtoFiltro(e.target.value)}
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        >
+          <option value="">Todos os tipos de ato</option>
+          {tipoAtoOptions.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nome}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={campoData}
+          onChange={(e) => setCampoData(e.target.value as "dataInicio" | "dataVencimento")}
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        >
+          <option value="dataInicio">Início</option>
+          <option value="dataVencimento">Vencimento</option>
+        </select>
+        <input
+          type="date"
+          value={dataDe}
+          onChange={(e) => setDataDe(e.target.value)}
+          title="De"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        />
+        <span className="text-sm text-slate-400">até</span>
+        <input
+          type="date"
+          value={dataAte}
+          onChange={(e) => setDataAte(e.target.value)}
+          title="Até"
+          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        />
+
+        {filtrosAtivos && (
+          <button
+            type="button"
+            onClick={limparFiltros}
+            className="text-sm text-slate-500 hover:text-accent hover:underline"
+          >
+            Limpar filtros
+          </button>
+        )}
+
         <div className="flex-1" />
+        {filtrados.length > 0 && (
+          <a
+            href={exportUrl}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent"
+          >
+            Baixar Excel
+          </a>
+        )}
         {!arquivados && (
           <>
             <button
@@ -241,6 +356,12 @@ export function ProtocolosView({
         )}
       </div>
 
+      {!loading && (
+        <p className="mb-2 text-xs text-slate-500">
+          {filtrados.length} de {totalNaVisao} protocolo(s)
+        </p>
+      )}
+
       {selecionados.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-accent/40 bg-accent-soft px-3 py-2 text-sm">
           <span className="font-medium text-accent">
@@ -253,7 +374,15 @@ export function ProtocolosView({
             onChange={(e) => {
               const v = e.target.value;
               e.target.value = "";
-              if (v) aplicarEmMassa({ statusId: v });
+              if (!v) return;
+              const statusNome = statusOptions.find((s) => s.id === v)?.nome ?? "";
+              if (
+                confirm(
+                  `Mudar o status de ${selecionados.size} protocolo(s) selecionado(s) para "${statusNome}"?`
+                )
+              ) {
+                aplicarEmMassa({ statusId: v });
+              }
             }}
             className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none disabled:opacity-50"
           >

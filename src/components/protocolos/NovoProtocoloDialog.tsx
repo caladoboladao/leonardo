@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { api } from "@/lib/api-client";
 import { OrgaoOption, ProtocoloListItem, StatusOption, TipoAtoOption } from "@/lib/types";
+import { formatCnpj } from "@/lib/format";
 
 export function NovoProtocoloDialog({
   statusOptions,
@@ -118,7 +119,9 @@ export function NovoProtocoloDialog({
             <label className="mb-1 block text-sm font-medium text-slate-700">CNPJ</label>
             <input
               value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
+              onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+              placeholder="00.000.000/0000-00"
+              maxLength={18}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
             />
           </div>
