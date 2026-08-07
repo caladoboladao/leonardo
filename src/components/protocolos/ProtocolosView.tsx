@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { api } from "@/lib/api-client";
 import {
   OrgaoOption,
@@ -56,6 +57,7 @@ export function ProtocolosView({
   const [importarAberto, setImportarAberto] = useState(false);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [aplicandoEmMassa, setAplicandoEmMassa] = useState(false);
+  const { data: session } = useSession();
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -194,6 +196,32 @@ export function ProtocolosView({
     [protocolos, arquivados]
   );
 
+  const vencendoCount = useMemo(() => {
+    if (!settings) return 0;
+    return protocolos.filter(
+      (p) =>
+        situacaoVencimento(p.dataVencimento, p.status.isConcluido, settings.diasAlertaPrazo) ===
+        "proximo"
+    ).length;
+  }, [protocolos, settings]);
+
+  const vencidoCount = useMemo(() => {
+    if (!settings) return 0;
+    return protocolos.filter(
+      (p) =>
+        situacaoVencimento(p.dataVencimento, p.status.isConcluido, settings.diasAlertaPrazo) ===
+        "vencido"
+    ).length;
+  }, [protocolos, settings]);
+
+  const primeiroNome = session?.user?.name?.split(" ")[0];
+  const saudacao = (() => {
+    const hora = new Date().getHours();
+    if (hora < 12) return "Bom dia";
+    if (hora < 18) return "Boa tarde";
+    return "Boa noite";
+  })();
+
   const filtrosAtivos = Boolean(
     q.trim() || statusFiltro || orgaoFiltro || tipoAtoFiltro || dataDe || dataAte
   );
@@ -250,6 +278,34 @@ export function ProtocolosView({
 
   return (
     <div>
+      {!arquivados && (
+        <div className="mb-4">
+          <h1 className="text-xl font-semibold text-slate-900">
+            {saudacao}
+            {primeiroNome ? `, ${primeiroNome}` : ""}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {totalNaVisao} protocolo(s) ativo(s)
+            {vencendoCount > 0 && (
+              <>
+                {" "}
+                ·{" "}
+                <span className="font-medium text-amber-600">
+                  {vencendoCount} vencendo em breve
+                </span>
+              </>
+            )}
+            {vencidoCount > 0 && (
+              <>
+                {" "}
+                ·{" "}
+                <span className="font-medium text-red-600">{vencidoCount} vencido(s)</span>
+              </>
+            )}
+          </p>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <input
           value={q}
@@ -285,16 +341,18 @@ export function ProtocolosView({
             <button
               onClick={() => setImportarAberto(true)}
               disabled={loading || statusOptions.length === 0}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent disabled:opacity-50"
             >
+              <IconUpload className="h-4 w-4" />
               Importar planilha
             </button>
             <button
               onClick={() => setNovoAberto(true)}
               disabled={loading || statusOptions.length === 0}
-              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
             >
-              + Novo protocolo
+              <IconPlus className="h-4 w-4" />
+              Novo protocolo
             </button>
           </>
         )}
@@ -407,7 +465,7 @@ export function ProtocolosView({
       ) : filtrados.length === 0 ? (
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
           <table className="w-full min-w-[1370px] border-collapse text-sm [table-layout:fixed]">
             <colgroup>
               <col style={{ width: 36 }} />
@@ -480,12 +538,12 @@ export function ProtocolosView({
                 return (
                   <tr
                     key={p.id}
-                    className={`border-b border-slate-100 last:border-0 ${
+                    className={`border-b border-slate-100 transition-colors last:border-0 ${
                       situacao === "vencido"
-                        ? "bg-red-50"
+                        ? "bg-red-50 hover:bg-red-100/70"
                         : situacao === "proximo"
-                          ? "bg-amber-50"
-                          : ""
+                          ? "bg-amber-50 hover:bg-amber-100/70"
+                          : "hover:bg-slate-50"
                     }`}
                   >
                     <td className="px-3 py-1">
@@ -547,14 +605,17 @@ export function ProtocolosView({
                     <td className="px-1 py-1 text-sm">
                       {p.dataVencimento ? (
                         <span
-                          className={
+                          className={`inline-flex items-center gap-1 ${
                             situacao === "vencido"
                               ? "font-medium text-red-700"
                               : situacao === "proximo"
                                 ? "font-medium text-amber-700"
                                 : ""
-                          }
+                          }`}
                         >
+                          {(situacao === "vencido" || situacao === "proximo") && (
+                            <IconAlerta className="h-3.5 w-3.5 shrink-0" />
+                          )}
                           {new Date(p.dataVencimento).toLocaleDateString("pt-BR")}
                         </span>
                       ) : (
@@ -620,5 +681,44 @@ export function ProtocolosView({
         />
       )}
     </div>
+  );
+}
+
+type IconProps = { className?: string };
+
+function IconUpload({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <path
+        d="M8 10.5V2.5M8 2.5 5 5.5M8 2.5l3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconPlus({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconAlerta({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <path
+        d="M8 1.8 14.7 13a1 1 0 0 1-.87 1.5H2.17A1 1 0 0 1 1.3 13L8 1.8Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path d="M8 6.3v3.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="8" cy="11.6" r="0.9" fill="currentColor" />
+    </svg>
   );
 }
