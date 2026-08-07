@@ -15,6 +15,7 @@ import { InlineText, InlineNumber, InlineDate, InlineSelect } from "./InlineEdit
 import { NovoProtocoloDialog } from "./NovoProtocoloDialog";
 import { ImportarPlanilhaDialog } from "./ImportarPlanilhaDialog";
 import { ProtocoloPanel } from "./ProtocoloPanel";
+import { FiltrosPopover } from "./FiltrosPopover";
 
 type SortField =
   | "empresa"
@@ -256,86 +257,29 @@ export function ProtocolosView({
           placeholder="Buscar por empresa, protocolo ou responsável..."
           className="w-72 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-accent"
         />
-        <select
-          value={statusFiltro}
-          onChange={(e) => setStatusFiltro(e.target.value)}
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">Todos os status</option>
-          {statusOptions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nome}
-            </option>
-          ))}
-        </select>
-        <select
-          value={orgaoFiltro}
-          onChange={(e) => setOrgaoFiltro(e.target.value)}
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">Todos os órgãos</option>
-          {orgaoOptions.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.nome}
-            </option>
-          ))}
-        </select>
-        <select
-          value={tipoAtoFiltro}
-          onChange={(e) => setTipoAtoFiltro(e.target.value)}
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">Todos os tipos de ato</option>
-          {tipoAtoOptions.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nome}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={campoData}
-          onChange={(e) => setCampoData(e.target.value as "dataInicio" | "dataVencimento")}
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-        >
-          <option value="dataInicio">Início</option>
-          <option value="dataVencimento">Vencimento</option>
-        </select>
-        <input
-          type="date"
-          value={dataDe}
-          onChange={(e) => setDataDe(e.target.value)}
-          title="De"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        <FiltrosPopover
+          statusOptions={statusOptions}
+          orgaoOptions={orgaoOptions}
+          tipoAtoOptions={tipoAtoOptions}
+          statusFiltro={statusFiltro}
+          setStatusFiltro={setStatusFiltro}
+          orgaoFiltro={orgaoFiltro}
+          setOrgaoFiltro={setOrgaoFiltro}
+          tipoAtoFiltro={tipoAtoFiltro}
+          setTipoAtoFiltro={setTipoAtoFiltro}
+          campoData={campoData}
+          setCampoData={setCampoData}
+          dataDe={dataDe}
+          setDataDe={setDataDe}
+          dataAte={dataAte}
+          setDataAte={setDataAte}
+          filtrosAtivos={filtrosAtivos}
+          limparFiltros={limparFiltros}
+          exportUrl={exportUrl}
+          totalFiltrados={filtrados.length}
         />
-        <span className="text-sm text-slate-400">até</span>
-        <input
-          type="date"
-          value={dataAte}
-          onChange={(e) => setDataAte(e.target.value)}
-          title="Até"
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-        />
-
-        {filtrosAtivos && (
-          <button
-            type="button"
-            onClick={limparFiltros}
-            className="text-sm text-slate-500 hover:text-accent hover:underline"
-          >
-            Limpar filtros
-          </button>
-        )}
 
         <div className="flex-1" />
-        {filtrados.length > 0 && (
-          <a
-            href={exportUrl}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent"
-          >
-            Baixar Excel
-          </a>
-        )}
         {!arquivados && (
           <>
             <button
