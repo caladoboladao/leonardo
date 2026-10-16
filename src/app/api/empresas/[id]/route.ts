@@ -11,23 +11,38 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
 
-  const empresa = await prisma.empresa.findFirst({
-    where: { id, userId },
-    include: {
-      protocolos: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          orgao: true,
-          tipoAto: true,
-          status: true,
-          _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+  const [empresa, lancamentosResumo] = await Promise.all([
+    prisma.empresa.findFirst({
+      where: { id, userId },
+      include: {
+        protocolos: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            orgao: true,
+            tipoAto: true,
+            status: true,
+            _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.lancamento.groupBy({
+      by: ["tipo", "situacao"],
+      where: { protocolo: { empresaId: id, userId } },
+      _sum: { valor: true },
+    }),
+  ]);
 
   if (!empresa) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(empresa);
+
+  return NextResponse.json({
+    ...empresa,
+    lancamentosResumo: lancamentosResumo.map((r) => ({
+      tipo: r.tipo,
+      situacao: r.situacao,
+      total: r._sum.valor ?? 0,
+    })),
+  });
 });
 
 const updateSchema = z.object({

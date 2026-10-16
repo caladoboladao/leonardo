@@ -53,6 +53,10 @@ export const GET = apiRoute(async (req) => {
     ["Abertos no período", stats.abertosNoPeriodo],
     ["Concluídos no período", stats.concluidosNoPeriodo],
     ["Tempo médio de conclusão (dias)", stats.tempoMedioConclusaoDias ?? "—"],
+    ["Taxas lançadas no período (R$)", stats.totalTaxasNoPeriodo.toFixed(2)],
+    ["Taxas pagas no período (R$)", stats.totalTaxasPagasNoPeriodo.toFixed(2)],
+    ["Honorários lançados no período (R$)", stats.totalHonorariosNoPeriodo.toFixed(2)],
+    ["Honorários recebidos no período (R$)", stats.totalHonorariosRecebidosNoPeriodo.toFixed(2)],
   ];
   for (const [label, valor] of kpis) {
     ensureSpace(60);

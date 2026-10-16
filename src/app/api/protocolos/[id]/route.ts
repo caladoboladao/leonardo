@@ -30,6 +30,7 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
         },
       },
       exigencias: { orderBy: { dataRecebimento: "desc" } },
+      lancamentos: { orderBy: { createdAt: "desc" } },
       historicoStatus: {
         orderBy: { changedAt: "desc" },
         include: { statusAnterior: true, statusNovo: true },

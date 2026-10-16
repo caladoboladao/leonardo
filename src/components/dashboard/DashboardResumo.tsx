@@ -177,7 +177,7 @@ export function DashboardResumo() {
             ))}
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="mb-5 grid gap-5 md:grid-cols-2">
             <BarList
               titulo="Ativos por status"
               itens={stats.porStatus.map((s) => ({ nome: s.nome, total: s.total, cor: s.cor }))}
@@ -194,6 +194,32 @@ export function DashboardResumo() {
               max={maxPorOrgao}
               vazio="Nenhum protocolo ativo."
             />
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Taxas e honorários no período
+            </h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "Taxas lançadas", valor: stats.totalTaxasNoPeriodo },
+                { label: "Taxas pagas", valor: stats.totalTaxasPagasNoPeriodo },
+                { label: "Honorários lançados", valor: stats.totalHonorariosNoPeriodo },
+                { label: "Honorários recebidos", valor: stats.totalHonorariosRecebidosNoPeriodo },
+              ].map((t) => (
+                <div
+                  key={t.label}
+                  className="rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5"
+                >
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                    {t.label}
+                  </p>
+                  <p className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">
+                    {t.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       )}

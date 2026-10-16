@@ -12,7 +12,12 @@ export const GET = apiRoute(async (req) => {
   const { searchParams } = new URL(req.url);
   const protocolos = await prisma.protocolo.findMany({
     where: buildProtocolosWhere(userId, searchParams),
-    include: { orgao: true, tipoAto: true, status: true },
+    include: {
+      orgao: true,
+      tipoAto: true,
+      status: true,
+      lancamentos: { select: { valor: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -33,6 +38,7 @@ export const GET = apiRoute(async (req) => {
     { header: "Vencimento", key: "dataVencimento", width: 14 },
     { header: "Responsável", key: "clienteResponsavel", width: 22 },
     { header: "Data de conclusão", key: "dataConclusao", width: 16 },
+    { header: "Valor (taxas + honorários)", key: "valor", width: 20 },
   ];
   sheet.getRow(1).font = { bold: true };
 
@@ -49,6 +55,7 @@ export const GET = apiRoute(async (req) => {
       dataVencimento: p.dataVencimento ? p.dataVencimento.toLocaleDateString("pt-BR") : "",
       clienteResponsavel: p.clienteResponsavel ?? "",
       dataConclusao: p.dataConclusao ? p.dataConclusao.toLocaleDateString("pt-BR") : "",
+      valor: p.lancamentos.reduce((soma, l) => soma + l.valor, 0),
     });
   }
 

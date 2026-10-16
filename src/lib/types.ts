@@ -24,8 +24,15 @@ export type EmpresaListItem = Empresa & {
   _count: { protocolos: number };
 };
 
+export type LancamentoResumo = {
+  tipo: TipoLancamento;
+  situacao: SituacaoLancamento;
+  total: number;
+};
+
 export type EmpresaDetail = Empresa & {
   protocolos: ProtocoloListItem[];
+  lancamentosResumo: LancamentoResumo[];
 };
 
 export type ProtocoloListItem = {
@@ -88,11 +95,37 @@ export type StatusHistoricoItem = {
   statusNovo: StatusOption;
 };
 
+export type TipoLancamento = "TAXA" | "HONORARIO";
+
+export type SituacaoLancamento = "A_PAGAR" | "PAGO" | "A_FATURAR" | "FATURADO" | "RECEBIDO";
+
+export type Lancamento = {
+  id: string;
+  protocoloId: string;
+  tipo: TipoLancamento;
+  descricao: string;
+  valor: number;
+  vencimento: string | null;
+  dataPagamento: string | null;
+  situacao: SituacaoLancamento;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const SITUACAO_LANCAMENTO_LABEL: Record<SituacaoLancamento, string> = {
+  A_PAGAR: "A pagar",
+  PAGO: "Pago",
+  A_FATURAR: "A faturar",
+  FATURADO: "Faturado",
+  RECEBIDO: "Recebido",
+};
+
 export type ProtocoloDetail = ProtocoloListItem & {
   lembretes: Lembrete[];
   historicoStatus: StatusHistoricoItem[];
   tarefas: Tarefa[];
   exigencias: Exigencia[];
+  lancamentos: Lancamento[];
 };
 
 export type Settings = {
@@ -131,6 +164,10 @@ export type DashboardStats = {
   tempoMedioConclusaoDias: number | null;
   porStatus: { statusId: string; nome: string; cor: string; total: number }[];
   porOrgao: { nome: string; total: number }[];
+  totalTaxasNoPeriodo: number;
+  totalTaxasPagasNoPeriodo: number;
+  totalHonorariosNoPeriodo: number;
+  totalHonorariosRecebidosNoPeriodo: number;
 };
 
 export type OrigemTarefa = "MANUAL" | "MODELO";

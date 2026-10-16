@@ -5,14 +5,18 @@ import Link from "next/link";
 import { api } from "@/lib/api-client";
 import {
   Exigencia,
+  Lancamento,
   Lembrete,
   OrgaoOption,
   ORIGEM_LABEL,
   ProtocoloDetail,
   ProtocoloListItem,
+  SITUACAO_LANCAMENTO_LABEL,
+  SituacaoLancamento,
   StatusOption,
   Tarefa,
   TipoAtoOption,
+  TipoLancamento,
 } from "@/lib/types";
 import { StatusPill } from "./StatusPill";
 import { InlineText, InlineNumber, InlineSelect } from "./InlineEditors";
@@ -46,6 +50,10 @@ export function ProtocoloPanel({
   const [novaExigencia, setNovaExigencia] = useState("");
   const [novoPrazoExigencia, setNovoPrazoExigencia] = useState("30");
   const [enviandoExigencia, setEnviandoExigencia] = useState(false);
+  const [novoLancTipo, setNovoLancTipo] = useState<TipoLancamento>("TAXA");
+  const [novoLancDescricao, setNovoLancDescricao] = useState("");
+  const [novoLancValor, setNovoLancValor] = useState("");
+  const [enviandoLancamento, setEnviandoLancamento] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -211,6 +219,42 @@ export function ProtocoloPanel({
     await api.delete(`/api/exigencias/${id}`);
     setDetalhe((prev) =>
       prev ? { ...prev, exigencias: prev.exigencias.filter((x) => x.id !== id) } : prev
+    );
+  }
+
+  async function adicionarLancamento(e: FormEvent) {
+    e.preventDefault();
+    const valorNum = Number(novoLancValor.replace(",", "."));
+    if (!novoLancDescricao.trim() || !novoLancValor || Number.isNaN(valorNum)) return;
+    setEnviandoLancamento(true);
+    try {
+      const lancamento = await api.post<Lancamento>(
+        `/api/protocolos/${protocoloId}/lancamentos`,
+        { tipo: novoLancTipo, descricao: novoLancDescricao, valor: valorNum }
+      );
+      setDetalhe((prev) =>
+        prev ? { ...prev, lancamentos: [lancamento, ...prev.lancamentos] } : prev
+      );
+      setNovoLancDescricao("");
+      setNovoLancValor("");
+    } finally {
+      setEnviandoLancamento(false);
+    }
+  }
+
+  async function atualizarSituacaoLancamento(l: Lancamento, situacao: SituacaoLancamento) {
+    const atualizado = await api.patch<Lancamento>(`/api/lancamentos/${l.id}`, { situacao });
+    setDetalhe((prev) =>
+      prev
+        ? { ...prev, lancamentos: prev.lancamentos.map((x) => (x.id === l.id ? atualizado : x)) }
+        : prev
+    );
+  }
+
+  async function excluirLancamento(id: string) {
+    await api.delete(`/api/lancamentos/${id}`);
+    setDetalhe((prev) =>
+      prev ? { ...prev, lancamentos: prev.lancamentos.filter((x) => x.id !== id) } : prev
     );
   }
 
@@ -561,6 +605,97 @@ export function ProtocoloPanel({
                     );
                   })}
                 </ul>
+              )}
+            </section>
+
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">Taxas e honorários</h3>
+              <form onSubmit={adicionarLancamento} className="mb-3 flex flex-wrap items-center gap-2">
+                <select
+                  value={novoLancTipo}
+                  onChange={(e) => setNovoLancTipo(e.target.value as TipoLancamento)}
+                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                >
+                  <option value="TAXA">Taxa</option>
+                  <option value="HONORARIO">Honorário</option>
+                </select>
+                <input
+                  value={novoLancDescricao}
+                  onChange={(e) => setNovoLancDescricao(e.target.value)}
+                  placeholder="Descrição..."
+                  className="min-w-[140px] flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <input
+                  value={novoLancValor}
+                  onChange={(e) => setNovoLancValor(e.target.value)}
+                  placeholder="Valor (R$)"
+                  inputMode="decimal"
+                  className="w-28 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={enviandoLancamento}
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+                >
+                  Adicionar
+                </button>
+              </form>
+
+              {detalhe.lancamentos.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum lançamento ainda.</p>
+              ) : (
+                <>
+                  <ul className="mb-2 space-y-1.5">
+                    {detalhe.lancamentos.map((l) => (
+                      <li
+                        key={l.id}
+                        className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800">
+                            {l.tipo === "TAXA" ? "Taxa" : "Honorário"} · {l.descricao}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {l.valor.toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <select
+                            value={l.situacao}
+                            onChange={(e) =>
+                              atualizarSituacaoLancamento(l, e.target.value as SituacaoLancamento)
+                            }
+                            className="rounded border border-slate-300 px-1.5 py-1 text-xs outline-none"
+                          >
+                            {(l.tipo === "TAXA"
+                              ? (["A_PAGAR", "PAGO"] as SituacaoLancamento[])
+                              : (["A_FATURAR", "FATURADO", "RECEBIDO"] as SituacaoLancamento[])
+                            ).map((s) => (
+                              <option key={s} value={s}>
+                                {SITUACAO_LANCAMENTO_LABEL[s]}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => excluirLancamento(l.id)}
+                            className="text-xs text-slate-400 hover:text-red-600"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-slate-500">
+                    Total:{" "}
+                    {detalhe.lancamentos
+                      .reduce((soma, l) => soma + l.valor, 0)
+                      .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </>
               )}
             </section>
 

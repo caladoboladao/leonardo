@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
-import { EmpresaDetail, ProtocoloListItem } from "@/lib/types";
+import { EmpresaDetail, ProtocoloListItem, SITUACAO_LANCAMENTO_LABEL } from "@/lib/types";
 import { formatCnpj } from "@/lib/format";
 import { InlineText } from "@/components/protocolos/InlineEditors";
 
@@ -97,6 +97,24 @@ export function EmpresaDetailView({ empresaId }: { empresaId: string }) {
           />
         </div>
       </div>
+
+      {detalhe.lancamentosResumo.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm">
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">Taxas e honorários</h2>
+          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {detalhe.lancamentosResumo.map((r) => (
+              <li key={`${r.tipo}-${r.situacao}`} className="rounded-md bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-500">
+                  {r.tipo === "TAXA" ? "Taxa" : "Honorário"} · {SITUACAO_LANCAMENTO_LABEL[r.situacao]}
+                </p>
+                <p className="text-sm font-semibold text-slate-800">
+                  {r.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <ProtocolosDaEmpresa titulo="Protocolos ativos" protocolos={ativos} vazio="Nenhum protocolo ativo." basePath="/" />
       <ProtocolosDaEmpresa

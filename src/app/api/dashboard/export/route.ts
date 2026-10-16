@@ -32,6 +32,13 @@ export const GET = apiRoute(async (req) => {
       indicador: "Tempo médio de conclusão (dias)",
       valor: stats.tempoMedioConclusaoDias ?? "—",
     },
+    { indicador: "Taxas lançadas no período (R$)", valor: stats.totalTaxasNoPeriodo },
+    { indicador: "Taxas pagas no período (R$)", valor: stats.totalTaxasPagasNoPeriodo },
+    { indicador: "Honorários lançados no período (R$)", valor: stats.totalHonorariosNoPeriodo },
+    {
+      indicador: "Honorários recebidos no período (R$)",
+      valor: stats.totalHonorariosRecebidosNoPeriodo,
+    },
   ]);
   resumo.getRow(1).font = { bold: true };
 

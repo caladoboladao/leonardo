@@ -15,13 +15,17 @@ export type DashboardStats = {
   tempoMedioConclusaoDias: number | null;
   porStatus: { statusId: string; nome: string; cor: string; total: number }[];
   porOrgao: { nome: string; total: number }[];
+  totalTaxasNoPeriodo: number;
+  totalTaxasPagasNoPeriodo: number;
+  totalHonorariosNoPeriodo: number;
+  totalHonorariosRecebidosNoPeriodo: number;
 };
 
 export async function computeDashboardStats(
   userId: string,
   periodo: Periodo
 ): Promise<DashboardStats> {
-  const [settings, ativos, concluidos, abertosNoPeriodo] = await Promise.all([
+  const [settings, ativos, concluidos, abertosNoPeriodo, lancamentosNoPeriodo] = await Promise.all([
     prisma.settings.findUnique({ where: { userId } }),
     prisma.protocolo.findMany({
       where: { userId, status: { isConcluido: false } },
@@ -36,6 +40,13 @@ export async function computeDashboardStats(
         userId,
         ...(periodo ? { createdAt: { gte: periodo.from, lt: periodo.to } } : {}),
       },
+    }),
+    prisma.lancamento.findMany({
+      where: {
+        protocolo: { userId },
+        ...(periodo ? { createdAt: { gte: periodo.from, lt: periodo.to } } : {}),
+      },
+      select: { tipo: true, situacao: true, valor: true },
     }),
   ]);
 
@@ -89,6 +100,20 @@ export async function computeDashboardStats(
   const tempoMedioConclusaoDias =
     contamTempo > 0 ? Math.round((somaDias / contamTempo) * 10) / 10 : null;
 
+  let totalTaxasNoPeriodo = 0;
+  let totalTaxasPagasNoPeriodo = 0;
+  let totalHonorariosNoPeriodo = 0;
+  let totalHonorariosRecebidosNoPeriodo = 0;
+  for (const l of lancamentosNoPeriodo) {
+    if (l.tipo === "TAXA") {
+      totalTaxasNoPeriodo += l.valor;
+      if (l.situacao === "PAGO") totalTaxasPagasNoPeriodo += l.valor;
+    } else {
+      totalHonorariosNoPeriodo += l.valor;
+      if (l.situacao === "RECEBIDO") totalHonorariosRecebidosNoPeriodo += l.valor;
+    }
+  }
+
   return {
     geradoEm: hoje.toISOString(),
     periodoLabel: periodo?.label ?? "Todo o período",
@@ -103,6 +128,10 @@ export async function computeDashboardStats(
     porOrgao: Array.from(porOrgaoMap.entries())
       .map(([nome, total]) => ({ nome, total }))
       .sort((a, b) => b.total - a.total),
+    totalTaxasNoPeriodo,
+    totalTaxasPagasNoPeriodo,
+    totalHonorariosNoPeriodo,
+    totalHonorariosRecebidosNoPeriodo,
   };
 }
 

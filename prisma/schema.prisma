@@ -163,6 +163,7 @@ model Protocolo {
   lembretes       Lembrete[]
   tarefas         Tarefa[]
   exigencias      Exigencia[]
+  lancamentos     Lancamento[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -261,6 +262,40 @@ model Exigencia {
   updatedAt DateTime @updatedAt
 
   @@index([protocoloId, status])
+}
+
+enum TipoLancamento {
+  TAXA
+  HONORARIO
+}
+
+enum SituacaoLancamento {
+  A_PAGAR
+  PAGO
+  A_FATURAR
+  FATURADO
+  RECEBIDO
+}
+
+// Taxa (recolhida a órgãos) ou honorário (cobrado do cliente) ligado a um
+// protocolo. Taxas seguem a_pagar/pago; honorários seguem
+// a_faturar/faturado/recebido.
+model Lancamento {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  tipo          TipoLancamento
+  descricao     String
+  valor         Float
+  vencimento    DateTime?
+  dataPagamento DateTime?
+  situacao      SituacaoLancamento
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protocoloId])
 }
 
 enum OrigemTarefa {
