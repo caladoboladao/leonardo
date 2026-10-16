@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api-client";
 import {
+  COLUNAS_PROTOCOLOS,
+  ColunaProtocolo,
   OrgaoOption,
   ProtocoloListItem,
   Settings,
@@ -207,6 +209,12 @@ export function ProtocolosView({
         "vencido"
     ).length;
   }, [protocolos, settings]);
+
+  const colunasVisiveis = useMemo(
+    () => new Set<ColunaProtocolo>(settings?.colunasVisiveisProtocolos ?? COLUNAS_PROTOCOLOS),
+    [settings]
+  );
+  const mostrar = (coluna: ColunaProtocolo) => colunasVisiveis.has(coluna);
 
   const primeiroNome = session?.user?.name?.split(" ")[0];
   const saudacao = (() => {
@@ -468,14 +476,14 @@ export function ProtocolosView({
             <colgroup>
               <col style={{ width: 36 }} />
               <col style={{ width: 230 }} />
-              <col style={{ width: 150 }} />
-              <col style={{ width: 170 }} />
-              <col style={{ width: 170 }} />
-              <col style={{ width: 150 }} />
-              <col style={{ width: 110 }} />
-              <col style={{ width: 90 }} />
-              <col style={{ width: 110 }} />
-              <col style={{ width: 150 }} />
+              {mostrar("numeroProtocolo") && <col style={{ width: 150 }} />}
+              {mostrar("orgao") && <col style={{ width: 170 }} />}
+              {mostrar("tipoAto") && <col style={{ width: 170 }} />}
+              {mostrar("status") && <col style={{ width: 150 }} />}
+              {mostrar("dataInicio") && <col style={{ width: 110 }} />}
+              {mostrar("prazoDias") && <col style={{ width: 90 }} />}
+              {mostrar("dataVencimento") && <col style={{ width: 110 }} />}
+              {mostrar("clienteResponsavel") && <col style={{ width: 150 }} />}
               {arquivados && <col style={{ width: 130 }} />}
             </colgroup>
             <thead className="border-b border-slate-200 bg-slate-50">
@@ -501,28 +509,44 @@ export function ProtocolosView({
                   />
                 </th>
                 <th className="px-3 py-2 text-left">{headerButton("empresa", "Empresa")}</th>
-                <th className="px-3 py-2 text-left">
-                  {headerButton("numeroProtocolo", "Nº Protocolo")}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Órgão
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Tipo de ato
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Status
-                </th>
-                <th className="px-3 py-2 text-left">{headerButton("dataInicio", "Início")}</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Prazo (dias)
-                </th>
-                <th className="px-3 py-2 text-left">
-                  {headerButton("dataVencimento", "Vencimento")}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Responsável
-                </th>
+                {mostrar("numeroProtocolo") && (
+                  <th className="px-3 py-2 text-left">
+                    {headerButton("numeroProtocolo", "Nº Protocolo")}
+                  </th>
+                )}
+                {mostrar("orgao") && (
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Órgão
+                  </th>
+                )}
+                {mostrar("tipoAto") && (
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Tipo de ato
+                  </th>
+                )}
+                {mostrar("status") && (
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Status
+                  </th>
+                )}
+                {mostrar("dataInicio") && (
+                  <th className="px-3 py-2 text-left">{headerButton("dataInicio", "Início")}</th>
+                )}
+                {mostrar("prazoDias") && (
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Prazo (dias)
+                  </th>
+                )}
+                {mostrar("dataVencimento") && (
+                  <th className="px-3 py-2 text-left">
+                    {headerButton("dataVencimento", "Vencimento")}
+                  </th>
+                )}
+                {mostrar("clienteResponsavel") && (
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Responsável
+                  </th>
+                )}
                 {arquivados && (
                   <th className="px-3 py-2 text-left">
                     {headerButton("dataConclusao", "Data de conclusão")}
@@ -566,75 +590,91 @@ export function ProtocolosView({
                         {p.empresa}
                       </button>
                     </td>
-                    <td className="px-1 py-1">
-                      <InlineText
-                        value={p.numeroProtocolo ?? ""}
-                        placeholder="—"
-                        onSave={(v) => atualizarProtocolo(p.id, { numeroProtocolo: v })}
-                      />
-                    </td>
-                    <td className="px-1 py-1">
-                      <InlineSelect
-                        value={p.orgaoId}
-                        options={orgaoOptions}
-                        onSave={(v) => atualizarProtocolo(p.id, { orgaoId: v })}
-                      />
-                    </td>
-                    <td className="px-1 py-1">
-                      <InlineSelect
-                        value={p.tipoAtoId}
-                        options={tipoAtoOptions}
-                        onSave={(v) => atualizarProtocolo(p.id, { tipoAtoId: v })}
-                      />
-                    </td>
-                    <td className="px-1 py-1">
-                      <StatusPill
-                        status={p.status}
-                        options={statusOptions}
-                        onChange={(statusId) => atualizarProtocolo(p.id, { statusId })}
-                      />
-                    </td>
-                    <td className="px-1 py-1">
-                      <InlineDate
-                        value={p.dataInicio}
-                        onSave={(v) => atualizarProtocolo(p.id, { dataInicio: v })}
-                      />
-                    </td>
-                    <td className="px-1 py-1">
-                      <InlineNumber
-                        value={p.prazoDias}
-                        onSave={(v) => atualizarProtocolo(p.id, { prazoDias: v })}
-                      />
-                    </td>
-                    <td className="px-1 py-1 text-sm">
-                      {p.dataVencimento ? (
-                        <span
-                          className={`inline-flex items-center gap-1 ${
-                            situacao === "vencido"
-                              ? "font-medium text-red-700"
-                              : situacao === "proximo"
-                                ? "font-medium text-amber-700"
-                                : ""
-                          }`}
-                        >
-                          {(situacao === "vencido" || situacao === "proximo") && (
-                            <IconAlerta className="h-3.5 w-3.5 shrink-0" />
-                          )}
-                          {new Date(p.dataVencimento).toLocaleDateString("pt-BR")}
-                        </span>
-                      ) : (
-                        <span className="px-1.5 text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-1 py-1">
-                      <InlineText
-                        value={p.clienteResponsavel ?? ""}
-                        placeholder="—"
-                        onSave={(v) =>
-                          atualizarProtocolo(p.id, { clienteResponsavel: v })
-                        }
-                      />
-                    </td>
+                    {mostrar("numeroProtocolo") && (
+                      <td className="px-1 py-1">
+                        <InlineText
+                          value={p.numeroProtocolo ?? ""}
+                          placeholder="—"
+                          onSave={(v) => atualizarProtocolo(p.id, { numeroProtocolo: v })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("orgao") && (
+                      <td className="px-1 py-1">
+                        <InlineSelect
+                          value={p.orgaoId}
+                          options={orgaoOptions}
+                          onSave={(v) => atualizarProtocolo(p.id, { orgaoId: v })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("tipoAto") && (
+                      <td className="px-1 py-1">
+                        <InlineSelect
+                          value={p.tipoAtoId}
+                          options={tipoAtoOptions}
+                          onSave={(v) => atualizarProtocolo(p.id, { tipoAtoId: v })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("status") && (
+                      <td className="px-1 py-1">
+                        <StatusPill
+                          status={p.status}
+                          options={statusOptions}
+                          onChange={(statusId) => atualizarProtocolo(p.id, { statusId })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("dataInicio") && (
+                      <td className="px-1 py-1">
+                        <InlineDate
+                          value={p.dataInicio}
+                          onSave={(v) => atualizarProtocolo(p.id, { dataInicio: v })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("prazoDias") && (
+                      <td className="px-1 py-1">
+                        <InlineNumber
+                          value={p.prazoDias}
+                          onSave={(v) => atualizarProtocolo(p.id, { prazoDias: v })}
+                        />
+                      </td>
+                    )}
+                    {mostrar("dataVencimento") && (
+                      <td className="px-1 py-1 text-sm">
+                        {p.dataVencimento ? (
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              situacao === "vencido"
+                                ? "font-medium text-red-700"
+                                : situacao === "proximo"
+                                  ? "font-medium text-amber-700"
+                                  : ""
+                            }`}
+                          >
+                            {(situacao === "vencido" || situacao === "proximo") && (
+                              <IconAlerta className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            {new Date(p.dataVencimento).toLocaleDateString("pt-BR")}
+                          </span>
+                        ) : (
+                          <span className="px-1.5 text-slate-400">—</span>
+                        )}
+                      </td>
+                    )}
+                    {mostrar("clienteResponsavel") && (
+                      <td className="px-1 py-1">
+                        <InlineText
+                          value={p.clienteResponsavel ?? ""}
+                          placeholder="—"
+                          onSave={(v) =>
+                            atualizarProtocolo(p.id, { clienteResponsavel: v })
+                          }
+                        />
+                      </td>
+                    )}
                     {arquivados && (
                       <td className="px-2 py-1 text-sm text-slate-700">
                         {p.dataConclusao
@@ -668,6 +708,7 @@ export function ProtocolosView({
           statusOptions={statusOptions}
           orgaoOptions={orgaoOptions}
           tipoAtoOptions={tipoAtoOptions}
+          settings={settings}
           onClose={() => setImportarAberto(false)}
           onImported={carregar}
         />

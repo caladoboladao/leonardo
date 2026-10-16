@@ -127,7 +127,7 @@ export async function executarChecagemAutomatica() {
       }
     }
 
-    if (novosLembretes.length > 0) {
+    if (novosLembretes.length > 0 && (usuario.settings?.notificarPorEmail ?? true)) {
       await sendLembretesDigest({ to: usuario.email, itens: novosLembretes });
     }
 

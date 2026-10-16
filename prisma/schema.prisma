@@ -42,7 +42,21 @@ model Settings {
   // status para o qual o protocolo é movido automaticamente ao abrir uma
   // exigência (opcional — se não configurado, o status não muda sozinho)
   statusEmExigenciaId String?
-  statusEmExigencia   Status? @relation(fields: [statusEmExigenciaId], references: [id], onDelete: SetNull)
+  statusEmExigencia   Status? @relation("settingsStatusEmExigencia", fields: [statusEmExigenciaId], references: [id], onDelete: SetNull)
+
+  // colunas visíveis na tabela de protocolos (array de chaves), null = padrão (todas)
+  colunasVisiveisProtocolos Json?
+
+  // padrões pré-selecionados no formulário de importação de planilha
+  importStatusIdPadrao  String?
+  importStatusPadrao    Status?  @relation("settingsImportStatusPadrao", fields: [importStatusIdPadrao], references: [id], onDelete: SetNull)
+  importOrgaoIdPadrao   String?
+  importOrgaoPadrao     Orgao?   @relation(fields: [importOrgaoIdPadrao], references: [id], onDelete: SetNull)
+  importTipoAtoIdPadrao String?
+  importTipoAtoPadrao   TipoAto? @relation(fields: [importTipoAtoIdPadrao], references: [id], onDelete: SetNull)
+
+  // preferências de notificação
+  notificarPorEmail Boolean @default(true)
 
   updatedAt DateTime @updatedAt
 }
@@ -54,7 +68,8 @@ model Orgao {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  protocolos Protocolo[]
+  protocolos        Protocolo[]
+  settingsImportPadrao Settings[]
 
   createdAt DateTime @default(now())
 
@@ -68,8 +83,9 @@ model TipoAto {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  protocolos    Protocolo[]
-  modelosTarefa ModeloTarefa[]
+  protocolos           Protocolo[]
+  modelosTarefa        ModeloTarefa[]
+  settingsImportPadrao Settings[]
 
   createdAt DateTime @default(now())
 
@@ -87,10 +103,11 @@ model Status {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  protocolos            Protocolo[]
-  historicoStatusNovo   StatusHistorico[] @relation("statusNovo")
-  historicoStatusAntigo StatusHistorico[] @relation("statusAnterior")
-  settingsEmExigencia   Settings[]
+  protocolos              Protocolo[]
+  historicoStatusNovo     StatusHistorico[] @relation("statusNovo")
+  historicoStatusAntigo   StatusHistorico[] @relation("statusAnterior")
+  settingsEmExigencia     Settings[]        @relation("settingsStatusEmExigencia")
+  settingsImportPadrao    Settings[]        @relation("settingsImportStatusPadrao")
 
   createdAt DateTime @default(now())
 

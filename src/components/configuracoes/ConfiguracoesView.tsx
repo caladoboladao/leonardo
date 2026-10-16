@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import {
+  COLUNA_PROTOCOLO_LABEL,
+  COLUNAS_PROTOCOLOS,
+  ColunaProtocolo,
   GatilhoModeloTarefa,
   ModeloTarefa,
   OrgaoOption,
@@ -47,6 +50,11 @@ export function ConfiguracoesView() {
       diasAlertaPrazo: settings.diasAlertaPrazo,
       diasParado: settings.diasParado,
       statusEmExigenciaId: settings.statusEmExigenciaId,
+      colunasVisiveisProtocolos: settings.colunasVisiveisProtocolos,
+      importStatusIdPadrao: settings.importStatusIdPadrao,
+      importOrgaoIdPadrao: settings.importOrgaoIdPadrao,
+      importTipoAtoIdPadrao: settings.importTipoAtoIdPadrao,
+      notificarPorEmail: settings.notificarPorEmail,
     });
     setSettings(atualizado);
   }
@@ -111,6 +119,106 @@ export function ConfiguracoesView() {
                 ))}
             </select>
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Colunas visíveis na tabela de protocolos
+            </label>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+              {COLUNAS_PROTOCOLOS.map((coluna) => {
+                const colunasAtuais = settings.colunasVisiveisProtocolos ?? COLUNAS_PROTOCOLOS;
+                const marcada = colunasAtuais.includes(coluna);
+                return (
+                  <label key={coluna} className="flex items-center gap-1.5 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={marcada}
+                      onChange={(e) => {
+                        const base = settings.colunasVisiveisProtocolos ?? [...COLUNAS_PROTOCOLOS];
+                        const proximas: ColunaProtocolo[] = e.target.checked
+                          ? [...base, coluna]
+                          : base.filter((c) => c !== coluna);
+                        setSettings({ ...settings, colunasVisiveisProtocolos: proximas });
+                      }}
+                    />
+                    {COLUNA_PROTOCOLO_LABEL[coluna]}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Status padrão na importação
+              </label>
+              <select
+                value={settings.importStatusIdPadrao ?? ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, importStatusIdPadrao: e.target.value || null })
+                }
+                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+              >
+                <option value="">—</option>
+                {statusOptions
+                  .slice()
+                  .sort((a, b) => a.ordem - b.ordem)
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Órgão padrão na importação
+              </label>
+              <select
+                value={settings.importOrgaoIdPadrao ?? ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, importOrgaoIdPadrao: e.target.value || null })
+                }
+                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+              >
+                <option value="">—</option>
+                {orgaoOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Tipo de ato padrão na importação
+              </label>
+              <select
+                value={settings.importTipoAtoIdPadrao ?? ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, importTipoAtoIdPadrao: e.target.value || null })
+                }
+                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+              >
+                <option value="">—</option>
+                {tipoAtoOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={settings.notificarPorEmail}
+              onChange={(e) => setSettings({ ...settings, notificarPorEmail: e.target.checked })}
+            />
+            Receber e-mail quando novos lembretes forem gerados automaticamente
+          </label>
+
           <button
             type="submit"
             className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark"
@@ -118,6 +226,22 @@ export function ConfiguracoesView() {
             Salvar
           </button>
         </form>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold text-slate-900">Backup</h2>
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <p className="mb-3 text-sm text-slate-600">
+            Baixe uma cópia completa de todos os seus dados (protocolos, empresas, tarefas,
+            exigências, lançamentos e configurações) em formato JSON.
+          </p>
+          <a
+            href="/api/backup/export"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-accent hover:text-accent"
+          >
+            Baixar backup completo (JSON)
+          </a>
+        </div>
       </section>
 
       <ListaStatus statusOptions={statusOptions} onChange={setStatusOptions} />

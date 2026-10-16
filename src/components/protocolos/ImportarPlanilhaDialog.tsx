@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { OrgaoOption, StatusOption, TipoAtoOption } from "@/lib/types";
+import { OrgaoOption, Settings, StatusOption, TipoAtoOption } from "@/lib/types";
 
 type Resultado = {
   criados: number;
@@ -17,24 +17,27 @@ export function ImportarPlanilhaDialog({
   statusOptions,
   orgaoOptions,
   tipoAtoOptions,
+  settings,
   onClose,
   onImported,
 }: {
   statusOptions: StatusOption[];
   orgaoOptions: OrgaoOption[];
   tipoAtoOptions: TipoAtoOption[];
+  settings?: Settings | null;
   onClose: () => void;
   onImported: () => void;
 }) {
   const statusInicial =
+    settings?.importStatusIdPadrao ??
     statusOptions.find((s) => s.nome.toLowerCase() === "protocolado")?.id ??
     statusOptions.slice().sort((a, b) => a.ordem - b.ordem)[0]?.id ??
     "";
 
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [statusId, setStatusId] = useState(statusInicial);
-  const [orgaoId, setOrgaoId] = useState("");
-  const [tipoAtoId, setTipoAtoId] = useState("");
+  const [orgaoId, setOrgaoId] = useState(settings?.importOrgaoIdPadrao ?? "");
+  const [tipoAtoId, setTipoAtoId] = useState(settings?.importTipoAtoIdPadrao ?? "");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<Resultado | null>(null);

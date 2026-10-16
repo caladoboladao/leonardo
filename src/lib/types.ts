@@ -128,12 +128,41 @@ export type ProtocoloDetail = ProtocoloListItem & {
   lancamentos: Lancamento[];
 };
 
+export const COLUNAS_PROTOCOLOS = [
+  "numeroProtocolo",
+  "orgao",
+  "tipoAto",
+  "status",
+  "dataInicio",
+  "prazoDias",
+  "dataVencimento",
+  "clienteResponsavel",
+] as const;
+
+export type ColunaProtocolo = (typeof COLUNAS_PROTOCOLOS)[number];
+
+export const COLUNA_PROTOCOLO_LABEL: Record<ColunaProtocolo, string> = {
+  numeroProtocolo: "Nº Protocolo",
+  orgao: "Órgão",
+  tipoAto: "Tipo de ato",
+  status: "Status",
+  dataInicio: "Início",
+  prazoDias: "Prazo (dias)",
+  dataVencimento: "Vencimento",
+  clienteResponsavel: "Responsável",
+};
+
 export type Settings = {
   id: string;
   userId: string;
   diasAlertaPrazo: number;
   diasParado: number;
   statusEmExigenciaId: string | null;
+  colunasVisiveisProtocolos: ColunaProtocolo[] | null;
+  importStatusIdPadrao: string | null;
+  importOrgaoIdPadrao: string | null;
+  importTipoAtoIdPadrao: string | null;
+  notificarPorEmail: boolean;
   updatedAt: string;
 };
 
