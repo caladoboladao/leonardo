@@ -39,6 +39,11 @@ model Settings {
   // dias sem mudança de status para gerar lembrete automático de inatividade
   diasParado      Int @default(7)
 
+  // status para o qual o protocolo é movido automaticamente ao abrir uma
+  // exigência (opcional — se não configurado, o status não muda sozinho)
+  statusEmExigenciaId String?
+  statusEmExigencia   Status? @relation(fields: [statusEmExigenciaId], references: [id], onDelete: SetNull)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -85,6 +90,7 @@ model Status {
   protocolos            Protocolo[]
   historicoStatusNovo   StatusHistorico[] @relation("statusNovo")
   historicoStatusAntigo StatusHistorico[] @relation("statusAnterior")
+  settingsEmExigencia   Settings[]
 
   createdAt DateTime @default(now())
 
@@ -156,6 +162,7 @@ model Protocolo {
   historicoStatus StatusHistorico[]
   lembretes       Lembrete[]
   tarefas         Tarefa[]
+  exigencias      Exigencia[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -220,6 +227,35 @@ model Lembrete {
   status StatusLembrete @default(PENDENTE)
 
   emailEnviadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protocoloId, status])
+}
+
+enum StatusExigencia {
+  ABERTA
+  CUMPRIDA
+}
+
+// Exigência recebida do órgão sobre um protocolo em andamento — tem prazo
+// próprio para cumprimento, independente do prazo do protocolo.
+model Exigencia {
+  id          String    @id @default(cuid())
+  protocoloId String
+  protocolo   Protocolo @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  dataRecebimento  DateTime        @default(now())
+  descricao        String
+  // dias a partir do recebimento para cumprir a exigência (editável)
+  prazoCumprimento Int             @default(30)
+  dataCumprimento  DateTime?
+  numeroReprotocolo String?
+  status           StatusExigencia @default(ABERTA)
+
+  // marca que já foi gerado lembrete automático de prazo próximo, evita duplicar
+  alertaPrazoGeradoEm DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

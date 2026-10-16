@@ -82,6 +82,51 @@ export async function executarChecagemAutomatica() {
       }
     }
 
+    const exigenciasAbertas = await prisma.exigencia.findMany({
+      where: {
+        status: "ABERTA",
+        alertaPrazoGeradoEm: null,
+        protocolo: { userId: usuario.id },
+      },
+      include: {
+        protocolo: { select: { id: true, empresa: true, numeroProtocolo: true } },
+      },
+    });
+
+    for (const exigencia of exigenciasAbertas) {
+      const prazoFinal = new Date(exigencia.dataRecebimento);
+      prazoFinal.setDate(prazoFinal.getDate() + exigencia.prazoCumprimento);
+
+      if (diasEntre(hoje, prazoFinal) <= settings.diasAlertaPrazo) {
+        const diasRestantes = diasEntre(hoje, prazoFinal);
+        const nota =
+          diasRestantes >= 0
+            ? `Exigência "${exigencia.descricao}" vence em ${diasRestantes} dia(s) (${prazoFinal.toLocaleDateString("pt-BR")}).`
+            : `Exigência "${exigencia.descricao}" vencida há ${Math.abs(diasRestantes)} dia(s) (${prazoFinal.toLocaleDateString("pt-BR")}).`;
+
+        await prisma.$transaction([
+          prisma.lembrete.create({
+            data: {
+              protocoloId: exigencia.protocoloId,
+              nota,
+              origem: "PRAZO_EXIGENCIA",
+              status: "PENDENTE",
+            },
+          }),
+          prisma.exigencia.update({
+            where: { id: exigencia.id },
+            data: { alertaPrazoGeradoEm: hoje },
+          }),
+        ]);
+
+        novosLembretes.push({
+          empresa: exigencia.protocolo.empresa,
+          numeroProtocolo: exigencia.protocolo.numeroProtocolo,
+          nota,
+        });
+      }
+    }
+
     if (novosLembretes.length > 0) {
       await sendLembretesDigest({ to: usuario.email, itens: novosLembretes });
     }

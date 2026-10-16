@@ -92,6 +92,7 @@ export type ProtocoloDetail = ProtocoloListItem & {
   lembretes: Lembrete[];
   historicoStatus: StatusHistoricoItem[];
   tarefas: Tarefa[];
+  exigencias: Exigencia[];
 };
 
 export type Settings = {
@@ -99,6 +100,22 @@ export type Settings = {
   userId: string;
   diasAlertaPrazo: number;
   diasParado: number;
+  statusEmExigenciaId: string | null;
+  updatedAt: string;
+};
+
+export type StatusExigencia = "ABERTA" | "CUMPRIDA";
+
+export type Exigencia = {
+  id: string;
+  protocoloId: string;
+  dataRecebimento: string;
+  descricao: string;
+  prazoCumprimento: number;
+  dataCumprimento: string | null;
+  numeroReprotocolo: string | null;
+  status: StatusExigencia;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -151,6 +168,10 @@ export type ModeloTarefa = {
   updatedAt: string;
 };
 
+export type ExigenciaComProtocolo = Exigencia & {
+  protocolo: { id: string; empresa: string; numeroProtocolo: string | null };
+};
+
 export type HojeSummary = {
   geradoEm: string;
   tarefasVencidas: Tarefa[];
@@ -158,6 +179,8 @@ export type HojeSummary = {
   protocolosVencidos: ProtocoloListItem[];
   protocolosHoje: ProtocoloListItem[];
   lembretesPendentes: LembreteComProtocolo[];
+  exigenciasVencidas: ExigenciaComProtocolo[];
+  exigenciasHoje: ExigenciaComProtocolo[];
 };
 
 export const ORIGEM_LABEL: Record<OrigemLembrete, string> = {

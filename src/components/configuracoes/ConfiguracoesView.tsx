@@ -46,6 +46,7 @@ export function ConfiguracoesView() {
     const atualizado = await api.patch<Settings>("/api/settings", {
       diasAlertaPrazo: settings.diasAlertaPrazo,
       diasParado: settings.diasParado,
+      statusEmExigenciaId: settings.statusEmExigenciaId,
     });
     setSettings(atualizado);
   }
@@ -87,6 +88,28 @@ export function ConfiguracoesView() {
               }
               className="w-32 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Status para mover automaticamente ao abrir uma exigência
+            </label>
+            <select
+              value={settings.statusEmExigenciaId ?? ""}
+              onChange={(e) =>
+                setSettings({ ...settings, statusEmExigenciaId: e.target.value || null })
+              }
+              className="w-full max-w-xs rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+            >
+              <option value="">Não mover automaticamente</option>
+              {statusOptions
+                .slice()
+                .sort((a, b) => a.ordem - b.ordem)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome}
+                  </option>
+                ))}
+            </select>
           </div>
           <button
             type="submit"

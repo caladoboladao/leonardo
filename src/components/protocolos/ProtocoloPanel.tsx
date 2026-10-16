@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import {
+  Exigencia,
   Lembrete,
   OrgaoOption,
   ORIGEM_LABEL,
@@ -42,6 +43,9 @@ export function ProtocoloPanel({
   const [enviandoVinculado, setEnviandoVinculado] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState("");
   const [enviandoTarefa, setEnviandoTarefa] = useState(false);
+  const [novaExigencia, setNovaExigencia] = useState("");
+  const [novoPrazoExigencia, setNovoPrazoExigencia] = useState("30");
+  const [enviandoExigencia, setEnviandoExigencia] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -157,6 +161,56 @@ export function ProtocoloPanel({
     await api.delete(`/api/tarefas/${id}`);
     setDetalhe((prev) =>
       prev ? { ...prev, tarefas: prev.tarefas.filter((x) => x.id !== id) } : prev
+    );
+  }
+
+  async function adicionarExigencia(e: FormEvent) {
+    e.preventDefault();
+    if (!novaExigencia.trim()) return;
+    setEnviandoExigencia(true);
+    try {
+      await api.post<Exigencia>(`/api/protocolos/${protocoloId}/exigencias`, {
+        descricao: novaExigencia,
+        prazoCumprimento: novoPrazoExigencia ? Number(novoPrazoExigencia) : 30,
+      });
+      // recarrega o protocolo inteiro: abrir uma exigência pode ter mudado
+      // o status automaticamente (status "em exigência" configurado)
+      const refreshed = await api.get<ProtocoloDetail>(`/api/protocolos/${protocoloId}`);
+      setDetalhe(refreshed);
+      onChanged(refreshed);
+      setNovaExigencia("");
+      setNovoPrazoExigencia("30");
+    } finally {
+      setEnviandoExigencia(false);
+    }
+  }
+
+  async function marcarExigenciaCumprida(ex: Exigencia) {
+    const atualizada = await api.patch<Exigencia>(`/api/exigencias/${ex.id}`, {
+      status: ex.status === "CUMPRIDA" ? "ABERTA" : "CUMPRIDA",
+    });
+    setDetalhe((prev) =>
+      prev
+        ? { ...prev, exigencias: prev.exigencias.map((x) => (x.id === ex.id ? atualizada : x)) }
+        : prev
+    );
+  }
+
+  async function salvarReprotocolo(id: string, numeroReprotocolo: string) {
+    const atualizada = await api.patch<Exigencia>(`/api/exigencias/${id}`, {
+      numeroReprotocolo,
+    });
+    setDetalhe((prev) =>
+      prev
+        ? { ...prev, exigencias: prev.exigencias.map((x) => (x.id === id ? atualizada : x)) }
+        : prev
+    );
+  }
+
+  async function excluirExigencia(id: string) {
+    await api.delete(`/api/exigencias/${id}`);
+    setDetalhe((prev) =>
+      prev ? { ...prev, exigencias: prev.exigencias.filter((x) => x.id !== id) } : prev
     );
   }
 
@@ -419,6 +473,93 @@ export function ProtocoloPanel({
                       </button>
                     </li>
                   ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">Exigências</h3>
+              <form onSubmit={adicionarExigencia} className="mb-3 flex flex-wrap gap-2">
+                <input
+                  value={novaExigencia}
+                  onChange={(e) => setNovaExigencia(e.target.value)}
+                  placeholder="Descrição da exigência..."
+                  className="min-w-[160px] flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  value={novoPrazoExigencia}
+                  onChange={(e) => setNovoPrazoExigencia(e.target.value)}
+                  placeholder="Prazo (dias)"
+                  className="w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={enviandoExigencia}
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+                >
+                  Adicionar
+                </button>
+              </form>
+
+              {detalhe.exigencias.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhuma exigência registrada.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {detalhe.exigencias.map((ex) => {
+                    const prazoFinal = new Date(ex.dataRecebimento);
+                    prazoFinal.setDate(prazoFinal.getDate() + ex.prazoCumprimento);
+                    return (
+                      <li
+                        key={ex.id}
+                        className={`rounded-md border px-3 py-2 text-sm ${
+                          ex.status === "ABERTA"
+                            ? "border-amber-200 bg-amber-50"
+                            : "border-slate-200 bg-slate-50"
+                        }`}
+                      >
+                        <div className="mb-1 flex items-start justify-between gap-2">
+                          <p
+                            className={
+                              ex.status === "CUMPRIDA"
+                                ? "text-slate-500 line-through"
+                                : "font-medium text-slate-800"
+                            }
+                          >
+                            {ex.descricao}
+                          </p>
+                          <div className="flex shrink-0 gap-2 text-xs">
+                            <button
+                              onClick={() => marcarExigenciaCumprida(ex)}
+                              className="font-medium text-slate-600 hover:underline"
+                            >
+                              {ex.status === "ABERTA" ? "Marcar cumprida" : "Reabrir"}
+                            </button>
+                            <button
+                              onClick={() => excluirExigencia(ex.id)}
+                              className="text-slate-400 hover:text-red-600"
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Recebida em {new Date(ex.dataRecebimento).toLocaleDateString("pt-BR")}{" "}
+                          · Prazo: {prazoFinal.toLocaleDateString("pt-BR")} ({ex.prazoCumprimento}{" "}
+                          dias)
+                          {ex.dataCumprimento &&
+                            ` · Cumprida em ${new Date(ex.dataCumprimento).toLocaleDateString("pt-BR")}`}
+                        </p>
+                        <InlineText
+                          value={ex.numeroReprotocolo ?? ""}
+                          placeholder="Nº do reprotocolo"
+                          onSave={(v) => salvarReprotocolo(ex.id, v)}
+                          className="mt-1"
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>

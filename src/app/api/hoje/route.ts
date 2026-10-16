@@ -27,6 +27,7 @@ export const GET = apiRoute(async () => {
     protocolosVencidos,
     protocolosHoje,
     lembretesPendentes,
+    exigenciasAbertas,
   ] = await Promise.all([
     prisma.tarefa.findMany({
       where: { userId, concluida: false, prazo: { lt: hoje } },
@@ -76,7 +77,22 @@ export const GET = apiRoute(async () => {
       },
       orderBy: { dataHora: "desc" },
     }),
+    prisma.exigencia.findMany({
+      where: { status: "ABERTA", protocolo: { userId } },
+      include: {
+        protocolo: { select: { id: true, empresa: true, numeroProtocolo: true } },
+      },
+    }),
   ]);
+
+  const exigenciasVencidas: typeof exigenciasAbertas = [];
+  const exigenciasHoje: typeof exigenciasAbertas = [];
+  for (const ex of exigenciasAbertas) {
+    const prazoFinal = new Date(ex.dataRecebimento);
+    prazoFinal.setDate(prazoFinal.getDate() + ex.prazoCumprimento);
+    if (prazoFinal < hoje) exigenciasVencidas.push(ex);
+    else if (prazoFinal < amanha) exigenciasHoje.push(ex);
+  }
 
   return NextResponse.json({
     geradoEm: new Date().toISOString(),
@@ -85,5 +101,7 @@ export const GET = apiRoute(async () => {
     protocolosVencidos,
     protocolosHoje,
     lembretesPendentes,
+    exigenciasVencidas,
+    exigenciasHoje,
   });
 });

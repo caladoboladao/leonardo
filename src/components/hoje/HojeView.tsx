@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
-import { HojeSummary, ProtocoloListItem, Tarefa } from "@/lib/types";
+import { ExigenciaComProtocolo, HojeSummary, ProtocoloListItem, Tarefa } from "@/lib/types";
 
 export function HojeView() {
   const [dados, setDados] = useState<HojeSummary | null>(null);
@@ -49,8 +49,10 @@ export function HojeView() {
     return <p className="text-sm text-slate-500">Carregando...</p>;
   }
 
-  const totalVencidos = dados.tarefasVencidas.length + dados.protocolosVencidos.length;
-  const totalHoje = dados.tarefasHoje.length + dados.protocolosHoje.length;
+  const totalVencidos =
+    dados.tarefasVencidas.length + dados.protocolosVencidos.length + dados.exigenciasVencidas.length;
+  const totalHoje =
+    dados.tarefasHoje.length + dados.protocolosHoje.length + dados.exigenciasHoje.length;
   const tudoEmDia = totalVencidos === 0 && totalHoje === 0 && dados.lembretesPendentes.length === 0;
 
   return (
@@ -75,6 +77,7 @@ export function HojeView() {
               corClasse="border-red-200 bg-red-50"
               tarefas={dados.tarefasVencidas}
               protocolos={dados.protocolosVencidos}
+              exigencias={dados.exigenciasVencidas}
               onConcluirTarefa={concluirTarefa}
             />
           )}
@@ -85,6 +88,7 @@ export function HojeView() {
               corClasse="border-amber-200 bg-amber-50"
               tarefas={dados.tarefasHoje}
               protocolos={dados.protocolosHoje}
+              exigencias={dados.exigenciasHoje}
               onConcluirTarefa={concluirTarefa}
             />
           )}
@@ -132,18 +136,20 @@ function Secao({
   corClasse,
   tarefas,
   protocolos,
+  exigencias,
   onConcluirTarefa,
 }: {
   titulo: string;
   corClasse: string;
   tarefas: Tarefa[];
   protocolos: ProtocoloListItem[];
+  exigencias: ExigenciaComProtocolo[];
   onConcluirTarefa: (id: string) => void;
 }) {
   return (
     <section>
       <h2 className="mb-2 text-sm font-semibold text-slate-900">
-        {titulo} ({tarefas.length + protocolos.length})
+        {titulo} ({tarefas.length + protocolos.length + exigencias.length})
       </h2>
       <ul className="space-y-1.5">
         {tarefas.map((t) => (
@@ -201,6 +207,27 @@ function Secao({
             </div>
           </li>
         ))}
+        {exigencias.map((ex) => {
+          const prazoFinal = new Date(ex.dataRecebimento);
+          prazoFinal.setDate(prazoFinal.getDate() + ex.prazoCumprimento);
+          return (
+            <li
+              key={`ex-${ex.id}`}
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${corClasse}`}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-800">Exigência: {ex.descricao}</p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span>Prazo: {prazoFinal.toLocaleDateString("pt-BR")}</span>
+                  <Link href={`/?protocolo=${ex.protocolo.id}`} className="hover:underline">
+                    {ex.protocolo.empresa}
+                    {ex.protocolo.numeroProtocolo ? ` (${ex.protocolo.numeroProtocolo})` : ""}
+                  </Link>
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

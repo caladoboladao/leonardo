@@ -29,6 +29,7 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
           empresa: { select: { id: true, razaoSocial: true } },
         },
       },
+      exigencias: { orderBy: { dataRecebimento: "desc" } },
       historicoStatus: {
         orderBy: { changedAt: "desc" },
         include: { statusAnterior: true, statusNovo: true },

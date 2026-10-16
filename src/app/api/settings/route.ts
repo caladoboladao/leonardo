@@ -19,6 +19,7 @@ export const GET = apiRoute(async () => {
 const updateSchema = z.object({
   diasAlertaPrazo: z.number().int().min(0).optional(),
   diasParado: z.number().int().min(1).optional(),
+  statusEmExigenciaId: z.string().nullable().optional(),
 });
 
 export const PATCH = apiRoute(async (req) => {
@@ -26,6 +27,14 @@ export const PATCH = apiRoute(async (req) => {
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = updateSchema.parse(await req.json());
+
+  if (body.statusEmExigenciaId) {
+    const status = await prisma.status.findFirst({
+      where: { id: body.statusEmExigenciaId, userId },
+    });
+    if (!status) return NextResponse.json({ error: "status inválido" }, { status: 400 });
+  }
+
   const settings = await prisma.settings.upsert({
     where: { userId },
     update: body,
