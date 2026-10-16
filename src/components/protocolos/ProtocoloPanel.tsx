@@ -10,6 +10,7 @@ import {
   ProtocoloDetail,
   ProtocoloListItem,
   StatusOption,
+  Tarefa,
   TipoAtoOption,
 } from "@/lib/types";
 import { StatusPill } from "./StatusPill";
@@ -39,6 +40,8 @@ export function ProtocoloPanel({
   const [enviandoNota, setEnviandoNota] = useState(false);
   const [novoVinculado, setNovoVinculado] = useState("");
   const [enviandoVinculado, setEnviandoVinculado] = useState(false);
+  const [novaTarefa, setNovaTarefa] = useState("");
+  const [enviandoTarefa, setEnviandoTarefa] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -119,6 +122,42 @@ export function ProtocoloPanel({
       .map((p) => p.numero)
       .filter((n) => n !== numero);
     await atualizar({ protocolosVinculados: numeros });
+  }
+
+  async function adicionarTarefa(e: FormEvent) {
+    e.preventDefault();
+    if (!novaTarefa.trim()) return;
+    setEnviandoTarefa(true);
+    try {
+      const tarefa = await api.post<Tarefa>("/api/tarefas", {
+        titulo: novaTarefa,
+        protocoloId,
+      });
+      setDetalhe((prev) =>
+        prev ? { ...prev, tarefas: [...prev.tarefas, tarefa] } : prev
+      );
+      setNovaTarefa("");
+    } finally {
+      setEnviandoTarefa(false);
+    }
+  }
+
+  async function alternarTarefa(t: Tarefa) {
+    const atualizada = await api.patch<Tarefa>(`/api/tarefas/${t.id}`, {
+      concluida: !t.concluida,
+    });
+    setDetalhe((prev) =>
+      prev
+        ? { ...prev, tarefas: prev.tarefas.map((x) => (x.id === t.id ? atualizada : x)) }
+        : prev
+    );
+  }
+
+  async function excluirTarefa(id: string) {
+    await api.delete(`/api/tarefas/${id}`);
+    setDetalhe((prev) =>
+      prev ? { ...prev, tarefas: prev.tarefas.filter((x) => x.id !== id) } : prev
+    );
   }
 
   async function excluirProtocolo() {
@@ -322,6 +361,65 @@ export function ProtocoloPanel({
                     </span>
                   ))}
                 </div>
+              )}
+            </section>
+
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">Tarefas</h3>
+              <form onSubmit={adicionarTarefa} className="mb-3 flex gap-2">
+                <input
+                  value={novaTarefa}
+                  onChange={(e) => setNovaTarefa(e.target.value)}
+                  placeholder="Nova tarefa..."
+                  className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={enviandoTarefa}
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+                >
+                  Adicionar
+                </button>
+              </form>
+
+              {detalhe.tarefas.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhuma tarefa ainda.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {detalhe.tarefas.map((t) => (
+                    <li
+                      key={t.id}
+                      className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={t.concluida}
+                        onChange={() => alternarTarefa(t)}
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-sm ${
+                            t.concluida ? "text-slate-400 line-through" : "text-slate-800"
+                          }`}
+                        >
+                          {t.titulo}
+                        </p>
+                        {t.prazo && (
+                          <p className="text-xs text-slate-500">
+                            Prazo: {new Date(t.prazo).toLocaleDateString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => excluirTarefa(t.id)}
+                        className="shrink-0 text-xs text-slate-400 hover:text-red-600"
+                      >
+                        Excluir
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
 

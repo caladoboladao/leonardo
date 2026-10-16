@@ -91,6 +91,7 @@ export type StatusHistoricoItem = {
 export type ProtocoloDetail = ProtocoloListItem & {
   lembretes: Lembrete[];
   historicoStatus: StatusHistoricoItem[];
+  tarefas: Tarefa[];
 };
 
 export type Settings = {
@@ -113,6 +114,41 @@ export type DashboardStats = {
   tempoMedioConclusaoDias: number | null;
   porStatus: { statusId: string; nome: string; cor: string; total: number }[];
   porOrgao: { nome: string; total: number }[];
+};
+
+export type OrigemTarefa = "MANUAL" | "MODELO";
+
+export type Tarefa = {
+  id: string;
+  userId: string;
+  titulo: string;
+  descricao: string | null;
+  prazo: string | null;
+  concluida: boolean;
+  dataConclusao: string | null;
+  protocoloId: string | null;
+  protocolo: { id: string; empresa: string; numeroProtocolo: string | null } | null;
+  empresaId: string | null;
+  empresa: { id: string; razaoSocial: string } | null;
+  ordem: number;
+  origem: OrigemTarefa;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GatilhoModeloTarefa = "CRIACAO" | "CONCLUSAO";
+
+export type ModeloTarefa = {
+  id: string;
+  userId: string;
+  tipoAtoId: string;
+  titulo: string;
+  descricao: string | null;
+  prazoDiasRelativo: number | null;
+  gatilho: GatilhoModeloTarefa;
+  ordem: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const ORIGEM_LABEL: Record<OrigemLembrete, string> = {

@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Protocolos", icon: IconTable },
   { href: "/concluidos", label: "Concluídos", icon: IconCheck },
   { href: "/empresas", label: "Empresas", icon: IconBuilding },
+  { href: "/tarefas", label: "Tarefas", icon: IconListCheck },
   { href: "/dashboard", label: "Dashboard", icon: IconChart },
   { href: "/lembretes", label: "Lembretes", icon: IconBell },
   { href: "/configuracoes", label: "Configurações", icon: IconGear },
@@ -114,6 +115,15 @@ function IconBuilding({ className }: IconProps) {
         strokeWidth="1.3"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+function IconListCheck({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <path d="M3 4h.01M3 8h.01M3 12h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M6.2 4h6.8M6.2 8h6.8M6.2 12h3.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }

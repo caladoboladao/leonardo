@@ -18,12 +18,14 @@ model User {
   name         String?
   createdAt    DateTime @default(now())
 
-  protocolos Protocolo[]
-  orgaos     Orgao[]
-  tiposAto   TipoAto[]
-  status     Status[]
-  empresas   Empresa[]
-  settings   Settings?
+  protocolos    Protocolo[]
+  orgaos        Orgao[]
+  tiposAto      TipoAto[]
+  status        Status[]
+  empresas      Empresa[]
+  tarefas       Tarefa[]
+  modelosTarefa ModeloTarefa[]
+  settings      Settings?
 }
 
 // Configurações editáveis pelo usuário (nada fixo no código)
@@ -61,7 +63,8 @@ model TipoAto {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  protocolos Protocolo[]
+  protocolos    Protocolo[]
+  modelosTarefa ModeloTarefa[]
 
   createdAt DateTime @default(now())
 
@@ -101,6 +104,7 @@ model Empresa {
   observacoes String?
 
   protocolos Protocolo[]
+  tarefas    Tarefa[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -151,6 +155,7 @@ model Protocolo {
 
   historicoStatus StatusHistorico[]
   lembretes       Lembrete[]
+  tarefas         Tarefa[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -220,4 +225,69 @@ model Lembrete {
   updatedAt DateTime @updatedAt
 
   @@index([protocoloId, status])
+}
+
+enum OrigemTarefa {
+  MANUAL
+  MODELO
+}
+
+// Tarefa avulsa ou vinculada a um protocolo/empresa. Pode ser criada
+// manualmente ou gerada automaticamente a partir de um ModeloTarefa.
+model Tarefa {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  titulo    String
+  descricao String?
+  prazo     DateTime?
+  concluida Boolean   @default(false)
+  dataConclusao DateTime?
+
+  protocoloId String?
+  protocolo   Protocolo? @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  ordem  Int          @default(0)
+  origem OrigemTarefa @default(MANUAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, concluida, prazo])
+  @@index([protocoloId])
+  @@index([empresaId])
+}
+
+enum GatilhoModeloTarefa {
+  CRIACAO
+  CONCLUSAO
+}
+
+// Modelo de checklist de tarefas por tipo de ato — ao criar um protocolo
+// desse tipo (gatilho CRIACAO) ou ao concluí-lo (gatilho CONCLUSAO), as
+// tarefas configuradas aqui são geradas automaticamente.
+model ModeloTarefa {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tipoAtoId String
+  tipoAto   TipoAto @relation(fields: [tipoAtoId], references: [id], onDelete: Cascade)
+
+  titulo            String
+  descricao         String?
+  // dias relativos à data de gatilho (criação ou conclusão do protocolo)
+  // para calcular o prazo da tarefa gerada; null = sem prazo
+  prazoDiasRelativo Int?
+  gatilho           GatilhoModeloTarefa @default(CRIACAO)
+  ordem             Int                 @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, tipoAtoId, gatilho, ordem])
 }

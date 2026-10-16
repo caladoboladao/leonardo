@@ -2,27 +2,37 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
-import { OrgaoOption, Settings, StatusOption, TipoAtoOption } from "@/lib/types";
+import {
+  GatilhoModeloTarefa,
+  ModeloTarefa,
+  OrgaoOption,
+  Settings,
+  StatusOption,
+  TipoAtoOption,
+} from "@/lib/types";
 
 export function ConfiguracoesView() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
   const [orgaoOptions, setOrgaoOptions] = useState<OrgaoOption[]>([]);
   const [tipoAtoOptions, setTipoAtoOptions] = useState<TipoAtoOption[]>([]);
+  const [modelosTarefa, setModelosTarefa] = useState<ModeloTarefa[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function carregar() {
     setLoading(true);
-    const [cfg, status, orgaos, tipos] = await Promise.all([
+    const [cfg, status, orgaos, tipos, modelos] = await Promise.all([
       api.get<Settings>("/api/settings"),
       api.get<StatusOption[]>("/api/opcoes/status"),
       api.get<OrgaoOption[]>("/api/opcoes/orgaos"),
       api.get<TipoAtoOption[]>("/api/opcoes/tipos-ato"),
+      api.get<ModeloTarefa[]>("/api/modelos-tarefa"),
     ]);
     setSettings(cfg);
     setStatusOptions(status);
     setOrgaoOptions(orgaos);
     setTipoAtoOptions(tipos);
+    setModelosTarefa(modelos);
     setLoading(false);
   }
 
@@ -100,7 +110,174 @@ export function ConfiguracoesView() {
         endpoint="/api/opcoes/tipos-ato"
         onChange={setTipoAtoOptions}
       />
+
+      <ModelosTarefaSection
+        tipoAtoOptions={tipoAtoOptions}
+        modelosTarefa={modelosTarefa}
+        onChange={setModelosTarefa}
+      />
     </div>
+  );
+}
+
+function ModelosTarefaSection({
+  tipoAtoOptions,
+  modelosTarefa,
+  onChange,
+}: {
+  tipoAtoOptions: TipoAtoOption[];
+  modelosTarefa: ModeloTarefa[];
+  onChange: (v: ModeloTarefa[]) => void;
+}) {
+  const [tipoAtoId, setTipoAtoId] = useState("");
+  const [titulo, setTitulo] = useState("");
+  const [prazoDiasRelativo, setPrazoDiasRelativo] = useState("");
+  const [gatilho, setGatilho] = useState<GatilhoModeloTarefa>("CRIACAO");
+  const [saving, setSaving] = useState(false);
+
+  const tipoAtoAtivo = tipoAtoId || tipoAtoOptions[0]?.id || "";
+
+  async function adicionar(e: FormEvent) {
+    e.preventDefault();
+    if (!titulo.trim() || !tipoAtoAtivo) return;
+    setSaving(true);
+    try {
+      const criado = await api.post<ModeloTarefa>("/api/modelos-tarefa", {
+        tipoAtoId: tipoAtoAtivo,
+        titulo,
+        prazoDiasRelativo: prazoDiasRelativo === "" ? null : Number(prazoDiasRelativo),
+        gatilho,
+      });
+      onChange([...modelosTarefa, criado]);
+      setTitulo("");
+      setPrazoDiasRelativo("");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function excluir(id: string) {
+    await api.delete(`/api/modelos-tarefa/${id}`);
+    onChange(modelosTarefa.filter((m) => m.id !== id));
+  }
+
+  async function atualizar(id: string, data: Partial<ModeloTarefa>) {
+    const atualizado = await api.patch<ModeloTarefa>(`/api/modelos-tarefa/${id}`, data);
+    onChange(modelosTarefa.map((m) => (m.id === id ? atualizado : m)));
+  }
+
+  return (
+    <section>
+      <h2 className="mb-1 text-sm font-semibold text-slate-900">Modelos de tarefa por tipo de ato</h2>
+      <p className="mb-3 text-xs text-slate-500">
+        Checklists geradas automaticamente ao criar um protocolo desse tipo (gatilho
+        &quot;Na criação&quot;) ou ao concluí-lo (&quot;Na conclusão&quot;, ex.: atualizar CNPJ na
+        Receita, alvará/TLF na Prefeitura, cadastro na SEFAZ).
+      </p>
+
+      {tipoAtoOptions.length === 0 ? (
+        <p className="text-sm text-slate-400">Cadastre um tipo de ato primeiro.</p>
+      ) : (
+        <>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {tipoAtoOptions.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTipoAtoId(t.id)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                  tipoAtoAtivo === t.id
+                    ? "bg-accent text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {t.nome}
+              </button>
+            ))}
+          </div>
+
+          {(["CRIACAO", "CONCLUSAO"] as GatilhoModeloTarefa[]).map((g) => {
+            const itens = modelosTarefa
+              .filter((m) => m.tipoAtoId === tipoAtoAtivo && m.gatilho === g)
+              .sort((a, b) => a.ordem - b.ordem);
+            return (
+              <div key={g} className="mb-3">
+                <h3 className="mb-1.5 text-xs font-medium uppercase text-slate-500">
+                  {g === "CRIACAO" ? "Na criação do protocolo" : "Na conclusão do protocolo"}
+                </h3>
+                {itens.length === 0 ? (
+                  <p className="mb-2 text-sm text-slate-400">Nenhuma tarefa configurada.</p>
+                ) : (
+                  <ul className="mb-2 space-y-1.5">
+                    {itens.map((m) => (
+                      <li
+                        key={m.id}
+                        className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5"
+                      >
+                        <input
+                          defaultValue={m.titulo}
+                          onBlur={(e) => {
+                            if (e.target.value !== m.titulo) atualizar(m.id, { titulo: e.target.value });
+                          }}
+                          className="flex-1 rounded border border-transparent px-1 py-0.5 text-sm hover:border-slate-300 focus:border-slate-400 outline-none"
+                        />
+                        <input
+                          type="number"
+                          defaultValue={m.prazoDiasRelativo ?? ""}
+                          placeholder="dias"
+                          onBlur={(e) => {
+                            const v = e.target.value === "" ? null : Number(e.target.value);
+                            if (v !== m.prazoDiasRelativo) atualizar(m.id, { prazoDiasRelativo: v });
+                          }}
+                          className="w-20 rounded border border-slate-300 px-1.5 py-0.5 text-xs outline-none"
+                        />
+                        <button
+                          onClick={() => excluir(m.id)}
+                          className="text-xs text-slate-400 hover:text-red-600"
+                        >
+                          Excluir
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+
+          <form onSubmit={adicionar} className="flex flex-wrap items-center gap-2">
+            <input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Título da tarefa..."
+              className="min-w-[160px] flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+            />
+            <input
+              type="number"
+              value={prazoDiasRelativo}
+              onChange={(e) => setPrazoDiasRelativo(e.target.value)}
+              placeholder="Dias"
+              className="w-20 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none"
+            />
+            <select
+              value={gatilho}
+              onChange={(e) => setGatilho(e.target.value as GatilhoModeloTarefa)}
+              className="rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none"
+            >
+              <option value="CRIACAO">Na criação</option>
+              <option value="CONCLUSAO">Na conclusão</option>
+            </select>
+            <button
+              type="submit"
+              disabled={saving || !tipoAtoAtivo}
+              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+            >
+              Adicionar
+            </button>
+          </form>
+        </>
+      )}
+    </section>
   );
 }
 

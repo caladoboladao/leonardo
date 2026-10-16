@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/session";
 import { computeDataVencimento } from "@/lib/protocolos";
 import { buildProtocolosWhere } from "@/lib/protocolos-query";
+import { gerarTarefasDeModelo } from "@/lib/tarefas";
 import { apiRoute } from "@/lib/api-route";
 
 export const GET = apiRoute(async (req) => {
@@ -70,40 +71,53 @@ export const POST = apiRoute(async (req) => {
 
   const dataVencimento = computeDataVencimento(body.dataInicio, body.prazoDias);
 
-  const protocolo = await prisma.protocolo.create({
-    data: {
+  const protocolo = await prisma.$transaction(async (tx) => {
+    const criado = await tx.protocolo.create({
+      data: {
+        userId,
+        empresa: empresaRef.razaoSocial,
+        empresaId: empresaRef.id,
+        numeroProtocolo: body.numeroProtocolo,
+        cnpj: body.cnpj,
+        orgaoId: body.orgaoId ?? null,
+        tipoAtoId: body.tipoAtoId ?? null,
+        statusId: body.statusId,
+        dataInicio: body.dataInicio,
+        prazoDias: body.prazoDias ?? null,
+        dataVencimento,
+        dataConclusao: status.isConcluido ? new Date() : null,
+        clienteResponsavel: body.clienteResponsavel,
+        observacoes: body.observacoes,
+        empresasVinculadas: {
+          create: body.empresasVinculadas.map((nome) => ({ nome })),
+        },
+        protocolosVinculados: {
+          create: body.protocolosVinculados.map((numero) => ({ numero })),
+        },
+        historicoStatus: {
+          create: { statusNovoId: body.statusId },
+        },
+      },
+      include: {
+        orgao: true,
+        tipoAto: true,
+        status: true,
+        empresasVinculadas: true,
+        protocolosVinculados: true,
+        _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+      },
+    });
+
+    await gerarTarefasDeModelo(tx, {
       userId,
-      empresa: empresaRef.razaoSocial,
-      empresaId: empresaRef.id,
-      numeroProtocolo: body.numeroProtocolo,
-      cnpj: body.cnpj,
-      orgaoId: body.orgaoId ?? null,
-      tipoAtoId: body.tipoAtoId ?? null,
-      statusId: body.statusId,
-      dataInicio: body.dataInicio,
-      prazoDias: body.prazoDias ?? null,
-      dataVencimento,
-      dataConclusao: status.isConcluido ? new Date() : null,
-      clienteResponsavel: body.clienteResponsavel,
-      observacoes: body.observacoes,
-      empresasVinculadas: {
-        create: body.empresasVinculadas.map((nome) => ({ nome })),
-      },
-      protocolosVinculados: {
-        create: body.protocolosVinculados.map((numero) => ({ numero })),
-      },
-      historicoStatus: {
-        create: { statusNovoId: body.statusId },
-      },
-    },
-    include: {
-      orgao: true,
-      tipoAto: true,
-      status: true,
-      empresasVinculadas: true,
-      protocolosVinculados: true,
-      _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
-    },
+      protocoloId: criado.id,
+      empresaId: criado.empresaId,
+      tipoAtoId: criado.tipoAtoId,
+      gatilho: "CRIACAO",
+      dataBase: criado.dataInicio,
+    });
+
+    return criado;
   });
 
   return NextResponse.json(protocolo, { status: 201 });

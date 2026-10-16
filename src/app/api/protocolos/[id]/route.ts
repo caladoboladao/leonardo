@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/session";
 import { computeDataVencimento } from "@/lib/protocolos";
+import { gerarTarefasDeModelo } from "@/lib/tarefas";
 import { apiRoute } from "@/lib/api-route";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -21,6 +22,13 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
       empresasVinculadas: true,
       protocolosVinculados: true,
       lembretes: { orderBy: { dataHora: "desc" } },
+      tarefas: {
+        orderBy: [{ concluida: "asc" }, { ordem: "asc" }],
+        include: {
+          protocolo: { select: { id: true, empresa: true, numeroProtocolo: true } },
+          empresa: { select: { id: true, razaoSocial: true } },
+        },
+      },
       historicoStatus: {
         orderBy: { changedAt: "desc" },
         include: { statusAnterior: true, statusNovo: true },
@@ -85,6 +93,7 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
   if (body.observacoes !== undefined) data.observacoes = body.observacoes;
 
   const statusMudou = body.statusId !== undefined && body.statusId !== existing.statusId;
+  let tornouConcluido = false;
   if (statusMudou) {
     data.statusId = body.statusId;
     data.ultimaMudancaStatusEm = new Date();
@@ -92,6 +101,7 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
 
     if (!existing.status.isConcluido && novoStatus!.isConcluido) {
       data.dataConclusao = new Date();
+      tornouConcluido = true;
     } else if (existing.status.isConcluido && !novoStatus!.isConcluido) {
       data.dataConclusao = null;
     }
@@ -141,7 +151,7 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
       }
     }
 
-    return tx.protocolo.update({
+    const atualizado = await tx.protocolo.update({
       where: { id },
       data,
       include: {
@@ -153,6 +163,19 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
         _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
       },
     });
+
+    if (tornouConcluido) {
+      await gerarTarefasDeModelo(tx, {
+        userId,
+        protocoloId: atualizado.id,
+        empresaId: atualizado.empresaId,
+        tipoAtoId: atualizado.tipoAtoId,
+        gatilho: "CONCLUSAO",
+        dataBase: atualizado.dataConclusao ?? new Date(),
+      });
+    }
+
+    return atualizado;
   });
 
   return NextResponse.json(protocolo);
