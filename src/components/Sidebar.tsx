@@ -6,9 +6,9 @@ import { signOut } from "next-auth/react";
 
 const LINKS = [
   { href: "/", label: "Protocolos", icon: IconTable },
+  { href: "/concluidos", label: "Concluídos", icon: IconCheck },
   { href: "/dashboard", label: "Dashboard", icon: IconChart },
   { href: "/lembretes", label: "Lembretes", icon: IconBell },
-  { href: "/historico", label: "Histórico", icon: IconClock },
   { href: "/configuracoes", label: "Configurações", icon: IconGear },
 ];
 
@@ -94,11 +94,11 @@ function IconBell({ className }: IconProps) {
   );
 }
 
-function IconClock({ className }: IconProps) {
+function IconCheck({ className }: IconProps) {
   return (
     <svg viewBox="0 0 16 16" fill="none" className={className}>
       <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M8 4.8V8l2.2 1.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M5.3 8.2 7.2 10l3.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

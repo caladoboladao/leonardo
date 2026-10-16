@@ -23,6 +23,7 @@ type SortField =
   | "numeroProtocolo"
   | "dataInicio"
   | "dataVencimento"
+  | "dataConclusao"
   | "createdAt";
 
 export function ProtocolosView({
@@ -134,16 +135,9 @@ export function ProtocolosView({
   }
 
   const filtrados = useMemo(() => {
-    let lista = protocolos;
+    let lista = protocolos.filter((p) => p.status.isConcluido === arquivados);
 
-    if (statusFiltro) {
-      // status escolhido explicitamente vale por si só — inclusive pra ver
-      // concluídos a partir da tela principal, mesmo ela normalmente
-      // escondendo-os.
-      lista = lista.filter((p) => p.statusId === statusFiltro);
-    } else {
-      lista = lista.filter((p) => p.status.isConcluido === arquivados);
-    }
+    if (statusFiltro) lista = lista.filter((p) => p.statusId === statusFiltro);
 
     if (q.trim()) {
       const termo = q.trim().toLowerCase();
@@ -466,7 +460,11 @@ export function ProtocolosView({
         <p className="text-sm text-slate-500">Nenhum protocolo encontrado.</p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-          <table className="w-full min-w-[1370px] border-collapse text-sm [table-layout:fixed]">
+          <table
+            className={`w-full border-collapse text-sm [table-layout:fixed] ${
+              arquivados ? "min-w-[1500px]" : "min-w-[1370px]"
+            }`}
+          >
             <colgroup>
               <col style={{ width: 36 }} />
               <col style={{ width: 230 }} />
@@ -478,6 +476,7 @@ export function ProtocolosView({
               <col style={{ width: 90 }} />
               <col style={{ width: 110 }} />
               <col style={{ width: 150 }} />
+              {arquivados && <col style={{ width: 130 }} />}
             </colgroup>
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
@@ -524,6 +523,11 @@ export function ProtocolosView({
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Responsável
                 </th>
+                {arquivados && (
+                  <th className="px-3 py-2 text-left">
+                    {headerButton("dataConclusao", "Data de conclusão")}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -631,6 +635,13 @@ export function ProtocolosView({
                         }
                       />
                     </td>
+                    {arquivados && (
+                      <td className="px-2 py-1 text-sm text-slate-700">
+                        {p.dataConclusao
+                          ? new Date(p.dataConclusao).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </td>
+                    )}
                   </tr>
                 );
               })}

@@ -1,9 +1,8 @@
 import { Prisma } from "@prisma/client";
 
-// Espelha a lógica de filtragem usada no cliente (ProtocolosView): um status
-// escolhido explicitamente vale por si só, inclusive pra ver concluídos numa
-// visão que normalmente os esconde; sem status escolhido, usa o escopo padrão
-// (ativos ou concluídos) conforme `arquivados`.
+// Espelha a lógica de filtragem usada no cliente (ProtocolosView): o escopo
+// ativos/concluídos vem sempre de `arquivados`, e o status escolhido apenas
+// refina dentro desse escopo.
 export function buildProtocolosWhere(
   userId: string,
   searchParams: URLSearchParams
@@ -20,13 +19,12 @@ export function buildProtocolosWhere(
 
   const where: Prisma.ProtocoloWhereInput = {
     userId,
-    ...(statusId
-      ? { statusId }
-      : arquivados === "true"
-        ? { status: { isConcluido: true } }
-        : arquivados === "all"
-          ? {}
-          : { status: { isConcluido: false } }),
+    ...(arquivados === "true"
+      ? { status: { isConcluido: true } }
+      : arquivados === "all"
+        ? {}
+        : { status: { isConcluido: false } }),
+    ...(statusId ? { statusId } : {}),
     ...(orgaoId ? { orgaoId } : {}),
     ...(tipoAtoId ? { tipoAtoId } : {}),
     ...(q
