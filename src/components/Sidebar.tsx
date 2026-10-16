@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const LINKS = [
+  { href: "/hoje", label: "Hoje", icon: IconSun },
   { href: "/", label: "Protocolos", icon: IconTable },
   { href: "/concluidos", label: "Concluídos", icon: IconCheck },
   { href: "/empresas", label: "Empresas", icon: IconBuilding },
@@ -64,6 +65,20 @@ export function Sidebar() {
 }
 
 type IconProps = { className?: string };
+
+function IconSun({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M8 1.5v1.4M8 13.1v1.4M14.5 8h-1.4M2.9 8H1.5M12.4 3.6l-1 1M4.6 11.4l-1 1M12.4 12.4l-1-1M4.6 4.6l-1-1"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 function IconTable({ className }: IconProps) {
   return (

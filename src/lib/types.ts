@@ -151,6 +151,15 @@ export type ModeloTarefa = {
   updatedAt: string;
 };
 
+export type HojeSummary = {
+  geradoEm: string;
+  tarefasVencidas: Tarefa[];
+  tarefasHoje: Tarefa[];
+  protocolosVencidos: ProtocoloListItem[];
+  protocolosHoje: ProtocoloListItem[];
+  lembretesPendentes: LembreteComProtocolo[];
+};
+
 export const ORIGEM_LABEL: Record<OrigemLembrete, string> = {
   MANUAL: "Manual",
   PRAZO_EXIGENCIA: "Prazo de exigência",
