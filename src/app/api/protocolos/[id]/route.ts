@@ -34,7 +34,7 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
 });
 
 const updateSchema = z.object({
-  empresa: z.string().min(1).optional(),
+  empresaId: z.string().min(1).optional(),
   empresasVinculadas: z.array(z.string().min(1)).optional(),
   protocolosVinculados: z.array(z.string().min(1)).optional(),
   numeroProtocolo: z.string().nullable().optional(),
@@ -71,7 +71,12 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
 
   const data: Record<string, unknown> = {};
 
-  if (body.empresa !== undefined) data.empresa = body.empresa;
+  if (body.empresaId !== undefined) {
+    const empresaRef = await prisma.empresa.findFirst({ where: { id: body.empresaId, userId } });
+    if (!empresaRef) return NextResponse.json({ error: "empresa inválida" }, { status: 400 });
+    data.empresaId = empresaRef.id;
+    data.empresa = empresaRef.razaoSocial;
+  }
   if (body.numeroProtocolo !== undefined) data.numeroProtocolo = body.numeroProtocolo;
   if (body.cnpj !== undefined) data.cnpj = body.cnpj;
   if (body.orgaoId !== undefined) data.orgaoId = body.orgaoId;

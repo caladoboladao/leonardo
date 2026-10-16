@@ -130,20 +130,28 @@ export const POST = apiRoute(async (req) => {
     );
   }
 
-  const [existentesRows, orgaosExistentes, tiposExistentes] = await Promise.all([
+  const [existentesRows, orgaosExistentes, tiposExistentes, empresasExistentes] = await Promise.all([
     prisma.protocolo.findMany({
       where: { userId, numeroProtocolo: { not: null } },
       select: { numeroProtocolo: true },
     }),
     prisma.orgao.findMany({ where: { userId } }),
     prisma.tipoAto.findMany({ where: { userId } }),
+    prisma.empresa.findMany({ where: { userId } }),
   ]);
 
   const existentes = new Set(existentesRows.map((p) => p.numeroProtocolo as string));
   const orgaoPorNome = new Map(orgaosExistentes.map((o) => [o.nome, o.id]));
   const tipoPorNome = new Map(tiposExistentes.map((t) => [t.nome, t.id]));
+  const empresaPorCnpj = new Map(
+    empresasExistentes.filter((e) => e.cnpj).map((e) => [e.cnpj as string, e])
+  );
+  const empresaPorNome = new Map(
+    empresasExistentes.map((e) => [e.razaoSocial.trim().toLowerCase(), e])
+  );
   let orgaosCriados = 0;
   let tiposCriados = 0;
+  let empresasCriadas = 0;
   const uid = userId;
 
   async function resolverOrgao(nome: string): Promise<string> {
@@ -162,6 +170,39 @@ export const POST = apiRoute(async (req) => {
     tipoPorNome.set(nome, criado.id);
     tiposCriados++;
     return criado.id;
+  }
+
+  // Agrupa pelo mesmo critério usado na migração de empresas: CNPJ quando
+  // houver, senão o nome normalizado — evita duplicar empresa ao reimportar.
+  async function resolverEmpresa(
+    nome: string,
+    cnpj: string | null
+  ): Promise<{ id: string; razaoSocial: string }> {
+    if (cnpj) {
+      const existentePorCnpj = empresaPorCnpj.get(cnpj);
+      if (existentePorCnpj) return existentePorCnpj;
+    }
+    const chaveNome = nome.trim().toLowerCase();
+    const existentePorNome = empresaPorNome.get(chaveNome);
+    if (existentePorNome) {
+      if (cnpj && !existentePorNome.cnpj) {
+        const atualizada = await prisma.empresa.update({
+          where: { id: existentePorNome.id },
+          data: { cnpj },
+        });
+        empresaPorCnpj.set(cnpj, atualizada);
+        return atualizada;
+      }
+      return existentePorNome;
+    }
+
+    const criada = await prisma.empresa.create({
+      data: { userId: uid, razaoSocial: nome, cnpj },
+    });
+    if (cnpj) empresaPorCnpj.set(cnpj, criada);
+    empresaPorNome.set(chaveNome, criada);
+    empresasCriadas++;
+    return criada;
   }
 
   let criados = 0;
@@ -195,11 +236,13 @@ export const POST = apiRoute(async (req) => {
 
     const orgaoId = orgaoNome ? await resolverOrgao(orgaoNome) : orgaoIdPadrao;
     const tipoAtoId = tipoNome ? await resolverTipoAto(tipoNome) : tipoAtoIdPadrao;
+    const empresaRef = await resolverEmpresa(empresa, cnpj);
 
     const protocolo = await prisma.protocolo.create({
       data: {
         userId,
-        empresa,
+        empresa: empresaRef.razaoSocial,
+        empresaId: empresaRef.id,
         numeroProtocolo: numero,
         cnpj,
         orgaoId,
@@ -228,6 +271,7 @@ export const POST = apiRoute(async (req) => {
     invalidos,
     orgaosCriados,
     tiposCriados,
+    empresasCriadas,
     lembretesCriados,
   });
 });

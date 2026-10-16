@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api-client";
 import {
   Lembrete,
@@ -143,10 +144,12 @@ export function ProtocoloPanel({
             <section className="mb-6 space-y-3">
               <div>
                 <span className="text-xs font-medium uppercase text-slate-500">Empresa</span>
-                <InlineText
-                  value={detalhe.empresa}
-                  onSave={(v) => atualizar({ empresa: v })}
-                />
+                <Link
+                  href={`/empresas/${detalhe.empresaId}`}
+                  className="block text-sm text-accent hover:underline"
+                >
+                  {detalhe.empresa}
+                </Link>
               </div>
 
               {detalhe.empresasVinculadas.length > 0 && (

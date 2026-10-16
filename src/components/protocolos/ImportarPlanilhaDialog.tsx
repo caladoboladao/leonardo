@@ -9,6 +9,7 @@ type Resultado = {
   invalidos: number;
   orgaosCriados: number;
   tiposCriados: number;
+  empresasCriadas: number;
   lembretesCriados: number;
 };
 
@@ -147,11 +148,14 @@ export function ImportarPlanilhaDialog({
             </p>
             {(resultado.orgaosCriados > 0 ||
               resultado.tiposCriados > 0 ||
+              resultado.empresasCriadas > 0 ||
               resultado.lembretesCriados > 0) && (
               <p className="mt-1 text-xs text-slate-500">
                 {resultado.orgaosCriados > 0 && `${resultado.orgaosCriados} órgão(s) novo(s). `}
                 {resultado.tiposCriados > 0 &&
                   `${resultado.tiposCriados} tipo(s) de ato novo(s). `}
+                {resultado.empresasCriadas > 0 &&
+                  `${resultado.empresasCriadas} empresa(s) nova(s). `}
                 {resultado.lembretesCriados > 0 &&
                   `${resultado.lembretesCriados} lembrete(s) criado(s) a partir da planilha.`}
               </p>

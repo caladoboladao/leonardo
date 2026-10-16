@@ -2,8 +2,15 @@
 
 import { FormEvent, useState } from "react";
 import { api } from "@/lib/api-client";
-import { OrgaoOption, ProtocoloListItem, StatusOption, TipoAtoOption } from "@/lib/types";
+import {
+  EmpresaOption,
+  OrgaoOption,
+  ProtocoloListItem,
+  StatusOption,
+  TipoAtoOption,
+} from "@/lib/types";
 import { formatCnpj } from "@/lib/format";
+import { EmpresaAutocomplete } from "@/components/empresas/EmpresaAutocomplete";
 
 export function NovoProtocoloDialog({
   statusOptions,
@@ -22,6 +29,7 @@ export function NovoProtocoloDialog({
     statusOptions.slice().sort((a, b) => a.ordem - b.ordem)[0]?.id ?? "";
 
   const [empresa, setEmpresa] = useState("");
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<EmpresaOption | null>(null);
   const [empresasVinculadas, setEmpresasVinculadas] = useState("");
   const [protocolosVinculados, setProtocolosVinculados] = useState("");
   const [numeroProtocolo, setNumeroProtocolo] = useState("");
@@ -38,11 +46,21 @@ export function NovoProtocoloDialog({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!empresa.trim()) return;
     setSaving(true);
     setError(null);
     try {
+      let empresaId = empresaSelecionada?.id;
+      if (!empresaId) {
+        const empresaCriada = await api.post<EmpresaOption>("/api/empresas", {
+          razaoSocial: empresa.trim(),
+          cnpj: cnpj || undefined,
+        });
+        empresaId = empresaCriada.id;
+      }
+
       const protocolo = await api.post<ProtocoloListItem>("/api/protocolos", {
-        empresa,
+        empresaId,
         empresasVinculadas: empresasVinculadas
           .split(",")
           .map((s) => s.trim())
@@ -78,12 +96,15 @@ export function NovoProtocoloDialog({
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Novo protocolo</h2>
 
         <label className="mb-1 block text-sm font-medium text-slate-700">Empresa *</label>
-        <input
-          required
-          value={empresa}
-          onChange={(e) => setEmpresa(e.target.value)}
-          className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none"
-        />
+        <div className="mb-3">
+          <EmpresaAutocomplete
+            value={empresa}
+            onChange={setEmpresa}
+            selectedId={empresaSelecionada?.id ?? null}
+            onSelect={setEmpresaSelecionada}
+            required
+          />
+        </div>
 
         <label className="mb-1 block text-sm font-medium text-slate-700">
           Empresas vinculadas (matriz/filiais, separadas por vírgula)

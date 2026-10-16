@@ -41,7 +41,7 @@ export const GET = apiRoute(async (req) => {
 });
 
 const createSchema = z.object({
-  empresa: z.string().min(1),
+  empresaId: z.string().min(1),
   empresasVinculadas: z.array(z.string().min(1)).optional().default([]),
   protocolosVinculados: z.array(z.string().min(1)).optional().default([]),
   numeroProtocolo: z.string().optional(),
@@ -61,17 +61,20 @@ export const POST = apiRoute(async (req) => {
 
   const body = createSchema.parse(await req.json());
 
-  const status = await prisma.status.findFirst({
-    where: { id: body.statusId, userId },
-  });
+  const [status, empresaRef] = await Promise.all([
+    prisma.status.findFirst({ where: { id: body.statusId, userId } }),
+    prisma.empresa.findFirst({ where: { id: body.empresaId, userId } }),
+  ]);
   if (!status) return NextResponse.json({ error: "status inválido" }, { status: 400 });
+  if (!empresaRef) return NextResponse.json({ error: "empresa inválida" }, { status: 400 });
 
   const dataVencimento = computeDataVencimento(body.dataInicio, body.prazoDias);
 
   const protocolo = await prisma.protocolo.create({
     data: {
       userId,
-      empresa: body.empresa,
+      empresa: empresaRef.razaoSocial,
+      empresaId: empresaRef.id,
       numeroProtocolo: body.numeroProtocolo,
       cnpj: body.cnpj,
       orgaoId: body.orgaoId ?? null,

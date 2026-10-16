@@ -12,9 +12,26 @@ export type TipoAtoOption = { id: string; nome: string };
 export type EmpresaVinculada = { id: string; nome: string };
 export type ProtocoloVinculado = { id: string; numero: string };
 
+export type EmpresaOption = { id: string; razaoSocial: string; cnpj: string | null };
+
+export type Empresa = EmpresaOption & {
+  observacoes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EmpresaListItem = Empresa & {
+  _count: { protocolos: number };
+};
+
+export type EmpresaDetail = Empresa & {
+  protocolos: ProtocoloListItem[];
+};
+
 export type ProtocoloListItem = {
   id: string;
   empresa: string;
+  empresaId: string;
   numeroProtocolo: string | null;
   cnpj: string | null;
   orgaoId: string | null;

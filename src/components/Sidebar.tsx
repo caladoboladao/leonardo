@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 const LINKS = [
   { href: "/", label: "Protocolos", icon: IconTable },
   { href: "/concluidos", label: "Concluídos", icon: IconCheck },
+  { href: "/empresas", label: "Empresas", icon: IconBuilding },
   { href: "/dashboard", label: "Dashboard", icon: IconChart },
   { href: "/lembretes", label: "Lembretes", icon: IconBell },
   { href: "/configuracoes", label: "Configurações", icon: IconGear },
@@ -99,6 +100,20 @@ function IconCheck({ className }: IconProps) {
     <svg viewBox="0 0 16 16" fill="none" className={className}>
       <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" />
       <path d="M5.3 8.2 7.2 10l3.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconBuilding({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className}>
+      <rect x="3" y="1.8" width="7" height="12.4" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M10 6.5h2.2a.8.8 0 0 1 .8.8v6.1a.8.8 0 0 1-.8.8H10M5.3 4.5h1.4M5.3 7h1.4M5.3 9.5h1.4"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
