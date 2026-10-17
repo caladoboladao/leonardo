@@ -59,7 +59,7 @@ JOIN inseridas i
   ON i.user_id = c.user_id
  AND (
       (c.cnpj_norm IS NOT NULL AND i.cnpj = c.cnpj_norm)
-   OR (c.cnpj_norm IS NULL AND i.cnpj IS NULL AND i.razao_social = c.empresa_nome)
+   OR (c.cnpj_norm IS NULL AND i.cnpj IS NULL AND TRIM(i.razao_social) = TRIM(c.empresa_nome))
  )
 WHERE p."id" = c.protocolo_id;
 
