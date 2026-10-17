@@ -21,6 +21,7 @@ import {
 import { StatusPill } from "./StatusPill";
 import { InlineText, InlineNumber, InlineSelect } from "./InlineEditors";
 import { formatCnpj } from "@/lib/format";
+import { TarefaPanel } from "@/components/tarefas/TarefaPanel";
 
 export function ProtocoloPanel({
   protocoloId,
@@ -47,6 +48,7 @@ export function ProtocoloPanel({
   const [enviandoVinculado, setEnviandoVinculado] = useState(false);
   const [novaTarefa, setNovaTarefa] = useState("");
   const [enviandoTarefa, setEnviandoTarefa] = useState(false);
+  const [tarefaAbertaId, setTarefaAbertaId] = useState<string | null>(null);
   const [novaExigencia, setNovaExigencia] = useState("");
   const [novoPrazoExigencia, setNovoPrazoExigencia] = useState("30");
   const [enviandoExigencia, setEnviandoExigencia] = useState(false);
@@ -463,7 +465,15 @@ export function ProtocoloPanel({
             </section>
 
             <section className="mb-6">
-              <h3 className="mb-2 text-sm font-semibold text-slate-900">Tarefas</h3>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">Tarefas</h3>
+                <Link
+                  href={`/tarefas?protocoloId=${protocoloId}`}
+                  className="text-xs text-accent hover:underline"
+                >
+                  Ver no quadro de tarefas
+                </Link>
+              </div>
               <form onSubmit={adicionarTarefa} className="mb-3 flex gap-2">
                 <input
                   value={novaTarefa}
@@ -496,13 +506,14 @@ export function ProtocoloPanel({
                         className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-sm ${
+                        <button
+                          onClick={() => setTarefaAbertaId(t.id)}
+                          className={`text-left text-sm hover:underline ${
                             t.concluida ? "text-slate-400 line-through" : "text-slate-800"
                           }`}
                         >
                           {t.titulo}
-                        </p>
+                        </button>
                         {t.prazo && (
                           <p className="text-xs text-slate-500">
                             Prazo: {new Date(t.prazo).toLocaleDateString("pt-BR")}
@@ -784,6 +795,24 @@ export function ProtocoloPanel({
           </>
         )}
       </div>
+
+      {tarefaAbertaId && (
+        <TarefaPanel
+          tarefaId={tarefaAbertaId}
+          onClose={() => setTarefaAbertaId(null)}
+          onChanged={(t) =>
+            setDetalhe((prev) =>
+              prev ? { ...prev, tarefas: prev.tarefas.map((x) => (x.id === t.id ? t : x)) } : prev
+            )
+          }
+          onDeleted={(id) => {
+            setDetalhe((prev) =>
+              prev ? { ...prev, tarefas: prev.tarefas.filter((x) => x.id !== id) } : prev
+            );
+            setTarefaAbertaId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

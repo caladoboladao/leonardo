@@ -33,7 +33,12 @@ export const GET = apiRoute(async (req) => {
       status: true,
       empresasVinculadas: true,
       protocolosVinculados: true,
-      _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+      _count: {
+        select: {
+          lembretes: { where: { status: "PENDENTE" } },
+          tarefas: { where: { status: { not: "CONCLUIDA" } } },
+        },
+      },
     },
     orderBy,
   });
@@ -104,7 +109,12 @@ export const POST = apiRoute(async (req) => {
         status: true,
         empresasVinculadas: true,
         protocolosVinculados: true,
-        _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+        _count: {
+          select: {
+            lembretes: { where: { status: "PENDENTE" } },
+            tarefas: { where: { status: { not: "CONCLUIDA" } } },
+          },
+        },
       },
     });
 

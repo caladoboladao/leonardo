@@ -10,6 +10,8 @@ export const GET = apiRoute(async (req) => {
 
   const { searchParams } = new URL(req.url);
   const concluida = searchParams.get("concluida");
+  const status = searchParams.get("status");
+  const responsavel = searchParams.get("responsavel");
   const protocoloId = searchParams.get("protocoloId");
   const empresaId = searchParams.get("empresaId");
   const vencidas = searchParams.get("vencidas") === "true";
@@ -21,6 +23,10 @@ export const GET = apiRoute(async (req) => {
   const where: Record<string, unknown> = { userId };
   if (concluida === "true") where.concluida = true;
   else if (concluida === "false") where.concluida = false;
+  if (status === "A_FAZER" || status === "EM_ANDAMENTO" || status === "CONCLUIDA") {
+    where.status = status;
+  }
+  if (responsavel) where.responsavel = { contains: responsavel, mode: "insensitive" };
   if (protocoloId) where.protocoloId = protocoloId;
   if (empresaId) where.empresaId = empresaId;
 
@@ -52,6 +58,8 @@ const createSchema = z.object({
   titulo: z.string().min(1),
   descricao: z.string().optional(),
   prazo: z.coerce.date().nullable().optional(),
+  responsavel: z.string().optional(),
+  status: z.enum(["A_FAZER", "EM_ANDAMENTO", "CONCLUIDA"]).optional(),
   protocoloId: z.string().optional(),
   empresaId: z.string().optional(),
   ordem: z.number().int().optional(),
@@ -79,12 +87,18 @@ export const POST = apiRoute(async (req) => {
     if (!empresa) return NextResponse.json({ error: "empresa inválida" }, { status: 400 });
   }
 
+  const status = body.status ?? "A_FAZER";
+
   const tarefa = await prisma.tarefa.create({
     data: {
       userId,
       titulo: body.titulo,
       descricao: body.descricao,
       prazo: body.prazo ?? null,
+      responsavel: body.responsavel,
+      status,
+      concluida: status === "CONCLUIDA",
+      dataConclusao: status === "CONCLUIDA" ? new Date() : null,
       protocoloId: body.protocoloId ?? null,
       empresaId,
       ordem: body.ordem ?? 0,

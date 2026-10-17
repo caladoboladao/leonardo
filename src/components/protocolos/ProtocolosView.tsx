@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api-client";
 import {
@@ -582,13 +583,24 @@ export function ProtocolosView({
                       />
                     </td>
                     <td className="px-1 py-1">
-                      <button
-                        className="w-full truncate rounded px-1.5 py-1 text-left font-medium hover:bg-slate-100"
-                        onClick={() => setSelecionadoId(p.id)}
-                        title="Abrir detalhes"
-                      >
-                        {p.empresa}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="min-w-0 flex-1 truncate rounded px-1.5 py-1 text-left font-medium hover:bg-slate-100"
+                          onClick={() => setSelecionadoId(p.id)}
+                          title="Abrir detalhes"
+                        >
+                          {p.empresa}
+                        </button>
+                        {p._count.tarefas > 0 && (
+                          <Link
+                            href={`/tarefas?protocoloId=${p.id}`}
+                            title={`${p._count.tarefas} tarefa(s) pendente(s)`}
+                            className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 hover:bg-accent hover:text-white"
+                          >
+                            {p._count.tarefas}
+                          </Link>
+                        )}
+                      </div>
                     </td>
                     {mostrar("numeroProtocolo") && (
                       <td className="px-1 py-1">

@@ -322,6 +322,12 @@ enum OrigemTarefa {
 
 // Tarefa avulsa ou vinculada a um protocolo/empresa. Pode ser criada
 // manualmente ou gerada automaticamente a partir de um ModeloTarefa.
+enum StatusTarefa {
+  A_FAZER
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
 model Tarefa {
   id     String @id @default(cuid())
   userId String
@@ -330,6 +336,12 @@ model Tarefa {
   titulo    String
   descricao String?
   prazo     DateTime?
+  responsavel String?
+  // "concluida"/"dataConclusao" continuam como a fonte de verdade de
+  // filtros e automações já existentes; "status" é derivado e mantido em
+  // sincronia pela API a cada mudança (permite a coluna "Em andamento"
+  // do quadro sem duplicar lógica de conclusão em todo lugar).
+  status    StatusTarefa @default(A_FAZER)
   concluida Boolean   @default(false)
   dataConclusao DateTime?
 
@@ -346,6 +358,7 @@ model Tarefa {
   updatedAt DateTime @updatedAt
 
   @@index([userId, concluida, prazo])
+  @@index([userId, status])
   @@index([protocoloId])
   @@index([empresaId])
 }

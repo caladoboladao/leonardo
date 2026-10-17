@@ -35,7 +35,12 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
         orderBy: { changedAt: "desc" },
         include: { statusAnterior: true, statusNovo: true },
       },
-      _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+      _count: {
+        select: {
+          lembretes: { where: { status: "PENDENTE" } },
+          tarefas: { where: { status: { not: "CONCLUIDA" } } },
+        },
+      },
     },
   });
 
@@ -162,7 +167,12 @@ export const PATCH = apiRoute<Ctx>(async (req, { params }) => {
         status: true,
         empresasVinculadas: true,
         protocolosVinculados: true,
-        _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+        _count: {
+          select: {
+            lembretes: { where: { status: "PENDENTE" } },
+            tarefas: { where: { status: { not: "CONCLUIDA" } } },
+          },
+        },
       },
     });
 

@@ -21,7 +21,12 @@ export const GET = apiRoute<Ctx>(async (_req, { params }) => {
             orgao: true,
             tipoAto: true,
             status: true,
-            _count: { select: { lembretes: { where: { status: "PENDENTE" } } } },
+            _count: {
+              select: {
+                lembretes: { where: { status: "PENDENTE" } },
+                tarefas: { where: { status: { not: "CONCLUIDA" } } },
+              },
+            },
           },
         },
       },

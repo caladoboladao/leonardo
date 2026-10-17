@@ -18,7 +18,12 @@ export const GET = apiRoute(async () => {
     status: true,
     empresasVinculadas: true,
     protocolosVinculados: true,
-    _count: { select: { lembretes: { where: { status: "PENDENTE" as const } } } },
+    _count: {
+      select: {
+        lembretes: { where: { status: "PENDENTE" as const } },
+        tarefas: { where: { status: { not: "CONCLUIDA" as const } } },
+      },
+    },
   };
 
   const [

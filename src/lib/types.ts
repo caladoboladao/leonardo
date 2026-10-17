@@ -55,7 +55,7 @@ export type ProtocoloListItem = {
   observacoes: string | null;
   empresasVinculadas: EmpresaVinculada[];
   protocolosVinculados: ProtocoloVinculado[];
-  _count: { lembretes: number };
+  _count: { lembretes: number; tarefas: number };
   createdAt: string;
   updatedAt: string;
 };
@@ -201,12 +201,24 @@ export type DashboardStats = {
 
 export type OrigemTarefa = "MANUAL" | "MODELO";
 
+export type StatusTarefa = "A_FAZER" | "EM_ANDAMENTO" | "CONCLUIDA";
+
+export const STATUS_TAREFA_LABEL: Record<StatusTarefa, string> = {
+  A_FAZER: "A fazer",
+  EM_ANDAMENTO: "Em andamento",
+  CONCLUIDA: "Concluída",
+};
+
+export const STATUS_TAREFA_ORDEM: StatusTarefa[] = ["A_FAZER", "EM_ANDAMENTO", "CONCLUIDA"];
+
 export type Tarefa = {
   id: string;
   userId: string;
   titulo: string;
   descricao: string | null;
   prazo: string | null;
+  responsavel: string | null;
+  status: StatusTarefa;
   concluida: boolean;
   dataConclusao: string | null;
   protocoloId: string | null;
