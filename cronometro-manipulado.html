@@ -3,87 +3,106 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cronômetro com tempo manipulado</title>
+<title>Cronômetro</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 16px; color: #222; line-height: 1.6; }
-  h1 { font-size: 26px; font-weight: 600; margin-bottom: 4px; }
-  h2 { font-size: 19px; font-weight: 600; margin-top: 32px; }
-  .lead { color: #555; margin-top: 0; }
-  .tool { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin: 24px 0; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  label { font-size: 13px; color: #555; }
-  input, select { width: 100%; margin-top: 4px; padding: 6px; font-size: 15px; box-sizing: border-box; }
-  .card { background: #f3f2ee; border-radius: 8px; padding: 12px; }
-  .card div:first-child { font-size: 13px; color: #555; }
-  .card div:last-child { font-size: 22px; font-weight: 500; }
-  #fake { font-size: 52px; font-family: ui-monospace, monospace; text-align: center; margin: 24px 0 4px; }
-  .sub { text-align: center; color: #555; font-size: 14px; }
-  .mono { font-family: ui-monospace, monospace; }
-  .btns { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
-  button { padding: 8px 18px; font-size: 15px; cursor: pointer; }
-  #err { color: #b42318; font-size: 13px; min-height: 18px; margin: 6px 0; }
-  .formula { background: #f3f2ee; border-radius: 8px; padding: 12px 16px; font-family: ui-monospace, monospace; }
+  :root { --bg: #ffffff; --fg: #1c1c1e; --muted: #8e8e93; --line: #e5e5ea; --panel: #f2f2f7;
+          --start: #34c759; --stop: #ff3b30; --neutral: #d1d1d6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000000; --fg: #ffffff; --muted: #8e8e93; --line: #2c2c2e; --panel: #1c1c1e;
+            --start: #30d158; --stop: #ff453a; --neutral: #3a3a3c; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, sans-serif;
+         display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  #fake { font-size: clamp(48px, 15vw, 128px); font-weight: 200; font-variant-numeric: tabular-nums;
+          letter-spacing: -1px; user-select: none; }
+  .btns { display: flex; gap: clamp(40px, 20vw, 200px); margin-top: 48px; }
+  .round { width: 84px; height: 84px; border-radius: 50%; border: none; font-size: 17px; cursor: pointer;
+           color: #fff; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px currentColor; }
+  #rs { background: var(--neutral); color: var(--fg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--neutral); }
+  #go { background: var(--start); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--start); }
+  #go.on { background: var(--stop); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--stop); }
+
+  /* engrenagem discreta */
+  #gear { position: fixed; top: 12px; right: 12px; width: 36px; height: 36px; border: none; background: none;
+          color: var(--muted); opacity: .25; cursor: pointer; padding: 6px; }
+  #gear:hover { opacity: .8; }
+
+  /* painel escondido */
+  #panel { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center;
+           justify-content: center; padding: 16px; }
+  #panel.open { display: flex; }
+  .box { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 20px;
+         width: 100%; max-width: 520px; }
+  .box h2 { margin: 0 0 14px; font-size: 18px; font-weight: 600; display: flex; justify-content: space-between; }
+  .box h2 button { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  label { font-size: 13px; color: var(--muted); }
+  input, select { width: 100%; margin-top: 4px; padding: 7px; font-size: 15px; border: 1px solid var(--line);
+                  border-radius: 8px; background: var(--bg); color: var(--fg); }
+  .card { background: var(--panel); border-radius: 8px; padding: 10px 12px; }
+  .card div:first-child { font-size: 12px; color: var(--muted); }
+  .card div:last-child { font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  #err { color: var(--stop); font-size: 13px; min-height: 18px; margin: 6px 0; }
+  .hint { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
 </style>
 </head>
 <body>
 
-<h1>Cronômetro com tempo manipulado</h1>
-<p class="lead">Um cronômetro em que cada segundo dura um pouquinho mais que um segundo de verdade, para que uma duração escolhida leve alguns minutos a mais no mundo real.</p>
+<button id="gear" aria-label="Configurações" title="Configurações (tecla C)">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+</button>
 
-<div class="tool">
-  <div class="grid">
-    <label>Duração no relógio (horas)<input id="h" type="number" value="8" min="0.01" step="0.25"></label>
-    <label>Minutos a mais<input id="m" type="number" value="5" step="1"></label>
-    <label>Velocidade de teste
-      <select id="sp">
-        <option value="1">1x (tempo real)</option>
-        <option value="60">60x</option>
-        <option value="600">600x</option>
-        <option value="3600">3600x</option>
-      </select>
-    </label>
-  </div>
-  <p id="err"></p>
-  <div class="grid">
-    <div class="card"><div>Cada segundo dura</div><div id="fac"></div></div>
-    <div class="card"><div>Ajuste</div><div id="pct"></div></div>
-    <div class="card"><div>Duração real total</div><div id="tot"></div></div>
-  </div>
-  <div id="fake">00:00:00.00</div>
-  <div class="sub">Tempo real: <span id="real" class="mono">00:00:00.00</span> · diferença: <span id="diff" class="mono">00:00</span></div>
-  <div class="btns">
-    <button id="go">Iniciar</button>
-    <button id="rs">Zerar</button>
-  </div>
+<div id="fake">00:00,00</div>
+<div class="btns">
+  <button id="rs" class="round">Zerar</button>
+  <button id="go" class="round">Iniciar</button>
 </div>
 
-<h2>A ideia</h2>
-<p>Imagine um relógio que você atrasa de propósito, mas de forma uniforme e imperceptível. No exemplo de 8 horas com 5 minutos a mais, cada segundo dura cerca de 1,0104 segundo real, ou seja, 1,04% a mais. Ninguém nota a diferença num segundo isolado, mas ao longo de 8 horas ela soma exatamente 5 minutos. Quando o relógio marcar 8:00:00, terão passado 8:05:00 de verdade.</p>
-
-<h2>Como usar</h2>
-<ul>
-  <li><strong>Duração no relógio:</strong> quanto tempo o relógio deve marcar no final (por exemplo, 8 horas).</li>
-  <li><strong>Minutos a mais:</strong> quanto tempo extra isso deve levar de verdade (por exemplo, 5). Um número negativo faz o contrário: o tempo "corre" mais rápido.</li>
-  <li><strong>Cartões:</strong> mostram quanto dura cada segundo manipulado, o ajuste em porcentagem e a duração real total.</li>
-  <li><strong>Iniciar:</strong> o número grande é o relógio manipulado. Embaixo aparecem o tempo real e a diferença que vai se acumulando.</li>
-  <li><strong>Velocidade de teste:</strong> só acelera a simulação, para ver o efeito sem esperar horas. Para usar de verdade, deixe em 1x.</li>
-</ul>
-<p>Você pode mudar os valores com o cronômetro rodando. O tempo já contado é mantido, e só o ritmo dali em diante muda.</p>
-
-<h2>A conta</h2>
-<p class="formula">fator = (minutos da duração + minutos extras) ÷ minutos da duração</p>
-<p>Com 8 horas e 5 minutos extras: 485 ÷ 480 ≈ 1,0104. O relógio manipulado mostra o tempo real dividido por esse fator.</p>
+<div id="panel">
+  <div class="box">
+    <h2>Configurações <button id="close" aria-label="Fechar">×</button></h2>
+    <div class="grid">
+      <label>Duração no relógio (horas)<input id="h" type="number" value="8" min="0.01" step="0.25"></label>
+      <label>Minutos a mais<input id="m" type="number" value="5" step="1"></label>
+      <label>Velocidade de teste
+        <select id="sp">
+          <option value="1">1x (tempo real)</option>
+          <option value="60">60x</option>
+          <option value="600">600x</option>
+          <option value="3600">3600x</option>
+        </select>
+      </label>
+    </div>
+    <p id="err"></p>
+    <div class="grid">
+      <div class="card"><div>Cada segundo dura</div><div id="fac"></div></div>
+      <div class="card"><div>Ajuste</div><div id="pct"></div></div>
+      <div class="card"><div>Duração real total</div><div id="tot"></div></div>
+      <div class="card"><div>Tempo real</div><div id="real">00:00:00</div></div>
+      <div class="card"><div>Diferença</div><div id="diff">00:00</div></div>
+    </div>
+    <p class="hint">Abra e feche este painel pela engrenagem no canto ou com a tecla C. Espaço inicia/pausa.</p>
+  </div>
+</div>
 
 <script>
   const $ = id => document.getElementById(id);
   let running = false, last = 0, real = 0, fake = 0, raf;
-
   const pad = n => String(n).padStart(2, '0');
-  function fmt(s, cent = true) {
+
+  // Formato de cronômetro: MM:SS,cc (mostra horas só quando passa de 1h)
+  function clock(s) {
     s = Math.max(0, s);
     const H = Math.floor(s / 3600), M = Math.floor(s % 3600 / 60),
           S = Math.floor(s % 60), cs = Math.floor((s % 1) * 100);
-    return pad(H) + ':' + pad(M) + ':' + pad(S) + (cent ? '.' + pad(cs) : '');
+    return (H ? H + ':' : '') + pad(M) + ':' + pad(S) + ',' + pad(cs);
+  }
+  function hms(s) {
+    s = Math.max(0, s);
+    return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(Math.floor(s % 60));
   }
 
   function factor() {
@@ -93,18 +112,19 @@
   }
 
   function info() {
+    try { localStorage.setItem('cron-cfg', JSON.stringify({ h: $('h').value, m: $('m').value })); } catch (e) {}
     const f = factor();
     if (f === null) { $('err').textContent = 'Use horas maiores que zero e minutos que não zerem o total.'; return; }
     $('err').textContent = '';
     const p = (f - 1) * 100;
     $('fac').textContent = f.toFixed(4).replace('.', ',') + ' s';
     $('pct').textContent = (p >= 0 ? '+' : '') + p.toFixed(2).replace('.', ',') + '%';
-    $('tot').textContent = fmt(parseFloat($('h').value) * 3600 * f, false);
+    $('tot').textContent = hms(parseFloat($('h').value) * 3600 * f);
   }
 
   function render() {
-    $('fake').textContent = fmt(fake);
-    $('real').textContent = fmt(real);
+    $('fake').textContent = clock(fake);
+    $('real').textContent = hms(real);
     const d = real - fake, a = Math.abs(d);
     $('diff').textContent = (d < 0 ? '-' : '') + pad(Math.floor(a / 60)) + ':' + pad(Math.floor(a % 60));
   }
@@ -121,18 +141,36 @@
     raf = requestAnimationFrame(tick);
   }
 
-  $('go').onclick = () => {
+  function toggle() {
     if (running) {
-      cancelAnimationFrame(raf); running = false; $('go').textContent = 'Continuar';
+      cancelAnimationFrame(raf); running = false;
+      $('go').textContent = 'Iniciar'; $('go').classList.remove('on');
     } else {
-      last = performance.now(); raf = requestAnimationFrame(tick);
-      running = true; $('go').textContent = 'Pausar';
+      last = performance.now(); raf = requestAnimationFrame(tick); running = true;
+      $('go').textContent = 'Parar'; $('go').classList.add('on');
     }
-  };
-  $('rs').onclick = () => { real = 0; fake = 0; render(); };
+  }
+  function reset() { real = 0; fake = 0; render(); }
+  function panel(open) { $('panel').classList.toggle('open', open); }
+
+  $('go').onclick = toggle;
+  $('rs').onclick = reset;
+  $('gear').onclick = () => panel(true);
+  $('close').onclick = () => panel(false);
+  $('panel').onclick = e => { if (e.target === $('panel')) panel(false); };
   $('h').oninput = info;
   $('m').oninput = info;
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { panel(false); document.activeElement.blur(); return; }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'c' || e.key === 'C') panel(!$('panel').classList.contains('open'));
+    else if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  });
 
+  try {
+    const c = JSON.parse(localStorage.getItem('cron-cfg'));
+    if (c) { $('h').value = c.h; $('m').value = c.m; }
+  } catch (e) {}
   info(); render();
 </script>
 </body>
